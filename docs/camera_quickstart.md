@@ -26,12 +26,18 @@ pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/
 In the lab, `g1lab` is also on the lab board:
 `pip install http://192.168.123.222:8090/g1lab-0.1.1-py3-none-any.whl`.
 
-You need Python 3.8 or newer. For the live window (section 4) and video
-files (section 5), also install OpenCV: put `g1lab[camera,video]` in the
-line above, or `pip install opencv-python` later. It is optional because it
-is large (about 190 MB). Without it, everything else here works: watching
-on the lab board, saving pictures, pictures as arrays and recording a
-dataset of pictures.
+You need Python 3.8 or newer.
+
+For the live window (section 4) and video files (section 5) you also need
+OpenCV. It is optional because it is large (about 190 MB); to install it
+with `g1lab`, use this line instead:
+
+```
+pip install "g1lab[camera,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.1/g1lab-0.1.1-py3-none-any.whl"
+```
+
+Without it, everything else here works: watching on the lab board, saving
+pictures, pictures as arrays and recording a dataset of pictures.
 
 ## 3. Save one picture
 
@@ -131,8 +137,12 @@ than many pictures of one view. For smooth video, set `per_second = 15`
 
 `g1lab.mock()` instead of `g1lab.connect(...)` plays a short recorded clip of
 the lab through `r.camera`, so the code above runs anywhere, with no
-network. It needs MuJoCo: install `g1lab[camera,mock]` instead of
-`g1lab[camera]` in section 2.
+network. It needs MuJoCo, so install `g1lab` with it:
+
+```
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.1/g1lab-0.1.1-py3-none-any.whl"
+```
+
 `g1lab.mock(camera="render")` draws a simulated camera view with a red ball
 instead.
 
