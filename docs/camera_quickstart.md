@@ -5,19 +5,17 @@ pictures from your own laptop. **None of this moves the robot, and you do not
 need a session or a turn:** anyone on the Robot Network can read the camera at
 the same time.
 
-## 1. Get on the Robot Network
+## 1. Get on the Robot Network and watch the camera
 
 The Robot Network is a VLAN on the lab's network switch (addresses
-`192.168.123.x`), with no internet. Your laptop has to be on it. Check: open
-**http://192.168.123.222:8090/** in a browser. That page is the **lab board**.
-
-## 2. Watch the camera
-
-The lab board shows what the camera sees, about 5 pictures a second. When
-it says **No picture from the camera**, the camera is not sending, and your
+`192.168.123.x`), with no internet. Your laptop has to be on it. Open
+**http://192.168.123.222:8090/** in a browser: that page is the **lab
+board**, and it shows what the camera sees, about 5 pictures a second. If
+the page does not open, your laptop is not on the Robot Network. When it
+says **No picture from the camera**, the camera is not sending, and your
 program will get `NoData` too.
 
-## 3. Install `g1lab`
+## 2. Install `g1lab`
 
 The Robot Network has no internet, so install somewhere that has it:
 
@@ -32,7 +30,7 @@ In the lab, `g1lab` is also on the lab board:
 You need Python 3.8 or newer. `opencv-python` is only for showing a live window
 and writing video.
 
-## 4. Save one picture
+## 3. Save one picture
 
 ```python
 import g1lab
@@ -46,7 +44,7 @@ print(img.shape)                                   # (480, 640, 3), colours in R
 r.close()
 ```
 
-## 5. A live window
+## 4. A live window
 
 ```python
 import cv2
@@ -63,7 +61,7 @@ r.close()
 
 Put your detector between `read()` and `imshow()`.
 
-## 6. Record pictures for a dataset
+## 5. Record pictures for a dataset
 
 Save this as `record_camera.py`:
 
@@ -129,7 +127,7 @@ than many pictures of one view. For smooth video, set `per_second = 15`
 `g1lab.mock()` instead of `g1lab.connect(...)` plays a short recorded clip of
 the lab through `r.camera`, so the code above runs anywhere, with no
 network. It needs MuJoCo: install `g1lab[camera,mock]` instead of
-`g1lab[camera]` in section 3.
+`g1lab[camera]` in section 2.
 `g1lab.mock(camera="render")` draws a simulated camera view with a red ball
 instead.
 
@@ -140,4 +138,4 @@ instead.
 | The browser cannot open the lab board | Your laptop is not on the Robot Network |
 | `NoData` after 2 seconds | The camera is not sending; the lab board says "No picture from the camera" |
 | `ModuleNotFoundError: PIL` | `pip install pillow` (needed for `camera.read()`) |
-| Colours look wrong in OpenCV | Convert RGB to BGR, as in section 5 |
+| Colours look wrong in OpenCV | Convert RGB to BGR, as in section 4 |
