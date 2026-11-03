@@ -117,6 +117,43 @@ different sides, distances, lighting and backgrounds make a better dataset
 than many pictures of one view. For smooth video, set `per_second = 15`
 (every picture the camera sends).
 
+## 6. Depth: what the camera sees in 3-D
+
+**Depth is already running on the robot.** The robot's own computer
+works out depth from both camera eyes and sends it out as 3-D points, 5
+times a second. You do not need to compute anything or install anything
+more: like the pictures, it needs no session or turn, and anyone on the
+Robot Network can read it.
+
+```python
+import numpy as np
+import g1lab
+
+r = g1lab.connect("192.168.123.222", name="ana")   # use your own name
+t, xyz, rgb = r.depth.read()                       # the newest points
+print(len(xyz), "points")                          # up to 20000
+
+ahead = xyz[np.abs(xyz[:, 1]) < 0.2]               # a strip 0.4 m wide, straight ahead
+if len(ahead):
+    print("nearest thing ahead:", ahead[:, 0].min().round(2), "m")
+
+np.savez("depth.npz", t=t, xyz=xyz, rgb=rgb)       # keep it for later
+```
+
+- **`xyz`** is one row per point, in metres, from the camera's left eye:
+  **x forward, y to the robot's left, z up**. The camera moves with the
+  head, so these are not room coordinates.
+- **`rgb`** is each point's colour (0 to 255), row for row with `xyz`.
+- **`t`** is when the camera took it, by the robot's clock, like the
+  pictures' `t`.
+- Only points the camera could measure are there: from about 0.3 m
+  (1 ft) out to 10 m (33 ft), on surfaces with some texture. Plain walls,
+  shiny things and anything nearer than 0.3 m can be missing.
+- To get every new set as it arrives instead of asking, use
+  `r.on("depth", f)`: it calls `f((t, xyz, rgb))` each time.
+- Depth comes only from the robot: `g1lab.mock()` has none (`r.depth.read()`
+  there raises `NoData`).
+
 ## What the pictures are
 
 - **640 × 480**, from the camera's **left eye**, corrected for lens
@@ -126,12 +163,11 @@ than many pictures of one view. For smooth video, set `per_second = 15`
 - **`t` is when the camera took the picture**, by the robot's own clock.
   That clock can be hours off from your laptop's, so use `t` to put pictures
   in order or measure time between them, not as the time of day.
-- **Depth:** `r.depth.read()` gives 3-D points in metres and their colours.
-- **Both eyes at full size** (for computing depth yourself) come from the ZED
-  SDK stream at `192.168.123.164:30000`. Only the ZED SDK can open it, and the
-  SDK runs only on an NVIDIA GPU (without one it refuses to start, depth or
-  not). The lab workstation has one; most laptops do not. For depth alone you
-  do not need it: `r.depth.read()` is computed on the robot.
+- **Depth** is already computed on the robot: see section 6.
+- **Both eyes at full size** are only for computing depth your own way. They
+  come from the ZED SDK stream at `192.168.123.164:30000`, which only the ZED
+  SDK can open, and the SDK needs an NVIDIA graphics card (the lab
+  workstation has one; most laptops do not).
 
 ## Practise without the robot
 
