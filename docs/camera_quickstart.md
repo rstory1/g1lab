@@ -44,12 +44,12 @@ pictures, pictures as arrays and recording a dataset of pictures.
 ```python
 import g1lab
 
-r = g1lab.connect("192.168.123.222", name="ana")   # use your own name
-t, jpeg = r.camera.jpeg()                          # the newest picture, as a JPEG file
+r = g1lab.connect("192.168.123.222", name="YOURNAME")  # use your own name
+t, jpeg = r.camera.jpeg()                              # the newest picture, as a JPEG file
 open("view.jpg", "wb").write(jpeg)
 
-t, img = r.camera.read()                           # the same, as a numpy array
-print(img.shape)                                   # (480, 640, 3), colours in RGB order
+t, img = r.camera.read()                               # the same, as a numpy array
+print(img.shape)                                       # (480, 640, 3), colours in RGB order
 r.close()
 ```
 
@@ -61,7 +61,7 @@ Needs OpenCV (section 2).
 import cv2
 import g1lab
 
-r = g1lab.connect("192.168.123.222", name="ana")
+r = g1lab.connect("192.168.123.222", name="YOURNAME")
 while True:
     t, img = r.camera.read()
     cv2.imshow("robot camera", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))   # OpenCV wants BGR
@@ -83,7 +83,7 @@ import g1lab
 out = sys.argv[1] if len(sys.argv) > 1 else "pictures"
 seconds, per_second = 30, 2                      # change these
 video = False                                    # True also writes video.mp4 (needs OpenCV, section 2)
-r = g1lab.connect("192.168.123.222", name="ana")
+r = g1lab.connect("192.168.123.222", name="YOURNAME")
 os.makedirs(out, exist_ok=True)
 writer = None
 with open(os.path.join(out, "frames.csv"), "w", newline="") as fh:
@@ -129,15 +129,15 @@ Robot Network can read it.
 import numpy as np
 import g1lab
 
-r = g1lab.connect("192.168.123.222", name="ana")   # use your own name
-t, xyz, rgb = r.depth.read()                       # the newest points
-print(len(xyz), "points")                          # up to 20000
+r = g1lab.connect("192.168.123.222", name="YOURNAME")  # use your own name
+t, xyz, rgb = r.depth.read()                           # the newest points
+print(len(xyz), "points")                              # up to 20000
 
-ahead = xyz[np.abs(xyz[:, 1]) < 0.2]               # a strip 0.4 m wide, straight ahead
+ahead = xyz[np.abs(xyz[:, 1]) < 0.2]                   # a strip 0.4 m wide, straight ahead
 if len(ahead):
     print("nearest thing ahead:", ahead[:, 0].min().round(2), "m")
 
-np.savez("depth.npz", t=t, xyz=xyz, rgb=rgb)       # keep it for later
+np.savez("depth.npz", t=t, xyz=xyz, rgb=rgb)           # keep it for later
 ```
 
 - **`xyz`** is one row per point, in metres, from the camera's left eye:

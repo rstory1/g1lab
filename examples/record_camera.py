@@ -5,9 +5,9 @@
 """Record the head camera to a folder of JPEGs, for labelling or training.
 Needs no session; the robot does not move.
 
-    python3 record_camera.py --host 192.168.123.222 --name ana --seconds 30
-    python3 record_camera.py --host 192.168.123.222 --name ana --fps 2 --out mugs
-    python3 record_camera.py --host 192.168.123.222 --name ana --video   # also an MP4
+    python3 record_camera.py --host 192.168.123.222 --name YOURNAME --seconds 30
+    python3 record_camera.py --host 192.168.123.222 --name YOURNAME --fps 2 --out mugs
+    python3 record_camera.py --host 192.168.123.222 --name YOURNAME --video  # also an MP4
 
 Writes <out>/frame_00001.jpg ... and <out>/frames.csv (frame, camera time,
 time saved). Pictures are 640 x 480, the left eye, at most 15 a second.

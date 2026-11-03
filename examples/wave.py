@@ -7,8 +7,8 @@
 It runs for 30 s (--seconds). To make your own motion, copy it and change
 `pose_at`, which gives the joint angles for each moment.
 
-    python3 wave.py --host mock --name ana                # on your laptop
-    python3 wave.py --host 192.168.123.222 --name ana     # in the lab
+    python3 wave.py --host mock --name YOURNAME             # on your laptop
+    python3 wave.py --host 192.168.123.222 --name YOURNAME  # in the lab
 """
 
 import argparse

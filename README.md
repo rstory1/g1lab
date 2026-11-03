@@ -57,7 +57,7 @@ import math
 import time
 import g1lab
 
-r = g1lab.mock()                                   # in the lab: g1lab.connect("192.168.123.222", name="ana")
+r = g1lab.mock()                                   # in the lab: g1lab.connect("192.168.123.222", name="YOURNAME")
 home = r.info().home                               # the robot's standing pose
 
 arm = home["right_arm"].copy()
@@ -79,7 +79,7 @@ with r.control() as c:                             # waits for your turn
 | [examples/](examples/) | small programs: `info.py`, `wave.py`, `raise_arm.py`, `sensors.py`, `record_camera.py`; each runs with `--host mock` |
 
 ```
-python examples/wave.py --host mock --name ana
+python examples/wave.py --host mock --name YOURNAME
 ```
 
 ## Licence

@@ -7,8 +7,8 @@
 The arm stays up for 20 s (--seconds) while the program just sleeps: g1lab
 keeps the pose held for you. When the program lets go, the arms go home.
 
-    python3 raise_arm.py --host mock --name ana                # on your laptop
-    python3 raise_arm.py --host 192.168.123.222 --name ana     # in the lab
+    python3 raise_arm.py --host mock --name YOURNAME             # on your laptop
+    python3 raise_arm.py --host 192.168.123.222 --name YOURNAME  # in the lab
 """
 
 import argparse
