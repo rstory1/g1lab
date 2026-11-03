@@ -20,13 +20,20 @@ Python 3.8 or newer. Run this anywhere with internet (the lab's Robot
 Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.0/g1lab-0.1.0-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.1/g1lab-0.1.1-py3-none-any.whl"
 ```
 
 `camera` adds Pillow (camera pictures as arrays), `mock` adds MuJoCo (the
 laptop robot). Leave out what you do not need: `pip install "g1lab @ ..."`
-is enough to drive the robot in the lab. The install is about 30 MB, most
-of it the robot model the mock uses.
+is enough to drive the robot in the lab. The install with `camera` and
+`mock` is about 240 MB, 30 MB of it `g1lab` itself (mostly the robot model
+the mock uses).
+
+**OpenCV is optional.** Add `video` (`g1lab[camera,mock,video]`, about
+190 MB more) to show the camera in a live window and to write video files
+(`examples/record_camera.py --video`). Without it everything else works:
+driving the robot, reading the sensors, pictures as arrays, and recording
+a dataset of pictures.
 
 In the lab, the same file is also on the lab board,
 `http://192.168.123.222:8090/`.
@@ -70,4 +77,4 @@ also carries the Unitree G1 robot model and meshes, under their own terms:
 see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 This repository is written out from the lab's own code for each release
-(version 0.1.0); changes are made there, not here.
+(version 0.1.1); changes are made there, not here.

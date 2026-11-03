@@ -20,15 +20,18 @@ program will get `NoData` too.
 The Robot Network has no internet, so install somewhere that has it:
 
 ```
-pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.0/g1lab-0.1.0-py3-none-any.whl"
-pip install opencv-python
+pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.1/g1lab-0.1.1-py3-none-any.whl"
 ```
 
 In the lab, `g1lab` is also on the lab board:
-`pip install http://192.168.123.222:8090/g1lab-0.1.0-py3-none-any.whl`.
+`pip install http://192.168.123.222:8090/g1lab-0.1.1-py3-none-any.whl`.
 
-You need Python 3.8 or newer. `opencv-python` is only for showing a live window
-and writing video.
+You need Python 3.8 or newer. For the live window (section 4) and video
+files (section 5), also install OpenCV: put `g1lab[camera,video]` in the
+line above, or `pip install opencv-python` later. It is optional because it
+is large (about 190 MB). Without it, everything else here works: watching
+on the lab board, saving pictures, pictures as arrays and recording a
+dataset of pictures.
 
 ## 3. Save one picture
 
@@ -45,6 +48,8 @@ r.close()
 ```
 
 ## 4. A live window
+
+Needs OpenCV (section 2).
 
 ```python
 import cv2
@@ -71,7 +76,7 @@ import g1lab
 
 out = sys.argv[1] if len(sys.argv) > 1 else "pictures"
 seconds, per_second = 30, 2                      # change these
-video = False                                    # True also writes video.mp4 (needs opencv-python)
+video = False                                    # True also writes video.mp4 (needs OpenCV, section 2)
 r = g1lab.connect("192.168.123.222", name="ana")
 os.makedirs(out, exist_ok=True)
 writer = None

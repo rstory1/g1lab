@@ -11,7 +11,7 @@ Needs no session; the robot does not move.
 
 Writes <out>/frame_00001.jpg ... and <out>/frames.csv (frame, camera time,
 time saved). Pictures are 640 x 480, the left eye, at most 15 a second.
---video needs OpenCV (`pip install opencv-python`).
+--video needs OpenCV (`pip install opencv-python`, or g1lab's `video` option).
 """
 
 import argparse
@@ -37,6 +37,11 @@ def main():
     ap.add_argument("--fps", type=float, default=15.0, help="pictures a second to keep (15 is all)")
     ap.add_argument("--video", action="store_true", help="also write <out>/video.mp4 (needs OpenCV)")
     a = ap.parse_args()
+    if a.video:
+        try:
+            import cv2  # noqa: F401
+        except ImportError:
+            sys.exit("--video needs OpenCV: pip install opencv-python (the pictures alone do not)")
 
     r = (g1lab.mock(name=a.name) if a.host == "mock"
          else g1lab.connect(a.host, name=a.name, port=a.port))
