@@ -20,11 +20,11 @@ program will get `NoData` too.
 The Robot Network has no internet, so install somewhere that has it:
 
 ```
-pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.1/g1lab-0.1.1-py3-none-any.whl"
+pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.2/g1lab-0.1.2-py3-none-any.whl"
 ```
 
 In the lab, `g1lab` is also on the lab board:
-`pip install http://192.168.123.222:8090/g1lab-0.1.1-py3-none-any.whl`.
+`pip install http://192.168.123.222:8090/g1lab-0.1.2-py3-none-any.whl`.
 
 You need Python 3.8 or newer.
 
@@ -33,7 +33,7 @@ OpenCV. It is optional because it is large (about 190 MB); to install it
 with `g1lab`, use this line instead:
 
 ```
-pip install "g1lab[camera,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.1/g1lab-0.1.1-py3-none-any.whl"
+pip install "g1lab[camera,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.2/g1lab-0.1.2-py3-none-any.whl"
 ```
 
 Without it, everything else here works: watching on the lab board, saving
@@ -176,7 +176,7 @@ the lab through `r.camera`, so the code above runs anywhere, with no
 network. It needs MuJoCo, so install `g1lab` with it:
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.1/g1lab-0.1.1-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.2/g1lab-0.1.2-py3-none-any.whl"
 ```
 
 `g1lab.mock(camera="render")` draws a simulated camera view with a red ball

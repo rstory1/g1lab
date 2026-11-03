@@ -20,7 +20,7 @@ Python 3.8 or newer. Run this anywhere with internet (the lab's Robot
 Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.1/g1lab-0.1.1-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.2/g1lab-0.1.2-py3-none-any.whl"
 ```
 
 `camera` adds Pillow (camera pictures as arrays), `mock` adds MuJoCo (the
@@ -28,7 +28,7 @@ laptop robot). Leave out what you do not need; this is enough to drive the
 robot in the lab:
 
 ```
-pip install "g1lab @ https://github.com/rstory1/g1lab/releases/download/v0.1.1/g1lab-0.1.1-py3-none-any.whl"
+pip install "g1lab @ https://github.com/rstory1/g1lab/releases/download/v0.1.2/g1lab-0.1.2-py3-none-any.whl"
 ```
 
 The install with `camera` and
@@ -40,7 +40,7 @@ video files (`examples/record_camera.py --video`), and it is about 190 MB
 more. To include it:
 
 ```
-pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.1/g1lab-0.1.1-py3-none-any.whl"
+pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.2/g1lab-0.1.2-py3-none-any.whl"
 ```
 
 Without it everything else works:
@@ -89,4 +89,4 @@ also carries the Unitree G1 robot model and meshes, under their own terms:
 see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 This repository is written out from the lab's own code for each release
-(version 0.1.1); changes are made there, not here.
+(version 0.1.2); changes are made there, not here.
