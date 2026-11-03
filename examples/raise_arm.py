@@ -2,10 +2,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 The University of Iowa, Department of Mechanical Engineering
 # SPDX-License-Identifier: Apache-2.0
 
-"""Raise the right arm forward, hold it, then let go: the guide's "program
-from scratch", with g1lab. There is no send loop: g1lab keeps sending for you.
+"""Raise the right arm forward, hold it, then let go.
 
-    python3 raise_arm.py --host 192.168.123.222 --name ana
+The arm stays up for 20 s (--seconds) while the program just sleeps: g1lab
+keeps the pose held for you. When the program lets go, the arms go home.
+
+    python3 raise_arm.py --host mock --name ana                # on your laptop
+    python3 raise_arm.py --host 192.168.123.222 --name ana     # in the lab
 """
 
 import argparse

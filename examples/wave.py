@@ -2,10 +2,13 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 The University of Iowa, Department of Mechanical Engineering
 # SPDX-License-Identifier: Apache-2.0
 
-"""Wave the right arm and open and close the right hand: student_client.py
-with g1lab. Copy it and change `pose_at`.
+"""Wave the right arm and open and close the right hand.
 
-    python3 wave.py --host 192.168.123.222 --name ana
+It runs for 30 s (--seconds). To make your own motion, copy it and change
+`pose_at`, which gives the joint angles for each moment.
+
+    python3 wave.py --host mock --name ana                # on your laptop
+    python3 wave.py --host 192.168.123.222 --name ana     # in the lab
 """
 
 import argparse
