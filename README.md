@@ -15,7 +15,7 @@ The University of Iowa).
 Python 3.8 or newer, somewhere with internet (the lab's Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.3/g1lab-0.1.3-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.4/g1lab-0.1.4-py3-none-any.whl"
 ```
 
 `camera` adds Pillow (camera pictures as arrays) and `mock` adds MuJoCo (the laptop
@@ -26,7 +26,7 @@ In the lab, plug into the Robot Network and set your address by hand:
 [section 1 of the camera quickstart](docs/camera_quickstart.md#1-get-on-the-robot-network-and-watch-the-camera).
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.3-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.4-py3-none-any.whl`
 
 ## A first program
 
@@ -84,6 +84,10 @@ pitch, yaw. Errors you can catch: `g1lab.Refused` (that pose is not allowed),
 sending), `Disconnected`, `Ended` (your session is over).
 
 `r.services.start("sim")` asks the lab computer for a simulated robot.
+
+`r.ask("your question")` returns the language model's answer as text; it runs on the
+lab computer and is refused while the real robot runs. The first question can take a
+minute. On the mock it answers with a line saying there is no model.
 
 ## Record a dataset
 
