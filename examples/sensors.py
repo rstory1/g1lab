@@ -38,7 +38,7 @@ def main():
         roll, pitch, yaw = r.state.imu().rpy
         print(f"body tilt: roll {math.degrees(roll):.1f}, pitch {math.degrees(pitch):.1f} deg")
         hand = r.hands.state("right")
-        print("right hand pads:", dict(zip(hand.pad_names, hand.pads.round(2))))
+        print("right hand pads:", dict(zip(hand.pad_names, hand.pads.round(2).tolist())))
         hot = r.state.temps().get("hottest")
         if hot:
             print(f"hottest motor: {hot['where']} at {hot['c']:.0f} C")

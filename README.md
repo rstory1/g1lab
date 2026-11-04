@@ -1,54 +1,32 @@
 # g1lab
 
-Drive and read a Unitree G1 humanoid from your own Python program: its two
-arms and two hands by joint angles, its joints, tilt, hand pads,
-temperatures and head camera. The robot keeps its own balance; your program
-never touches the legs.
+Drive and read a Unitree G1 humanoid from your own Python program: its arms and
+hands by joint angles, and its joints, tilt, hand pads, temperatures, camera,
+depth and lidar. The robot keeps its own balance; your program never touches the
+legs.
 
-`g1lab` is the student package of the G1 Lab (Department of Mechanical
-Engineering, The University of Iowa). The same program runs three ways:
-
-- **on your laptop, with no robot:** `g1lab.mock()` runs the robot's own
-  safety rules and a 3-D view, so a pose the robot would refuse is refused
-  here too;
-- **on the simulated robot** in the lab;
-- **on the real robot** in the lab, without changes.
+The same program runs on your laptop with no robot (`g1lab.mock()` refuses what
+the robot refuses), on the simulated robot in the lab, and on the real robot.
+`g1lab` is the student package of the G1 Lab (Department of Mechanical Engineering,
+The University of Iowa).
 
 ## Install
 
-Python 3.8 or newer. Run this anywhere with internet (the lab's Robot
-Network has none):
+Python 3.8 or newer, somewhere with internet (the lab's Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.2/g1lab-0.1.2-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.3/g1lab-0.1.3-py3-none-any.whl"
 ```
 
-`camera` adds Pillow (camera pictures as arrays), `mock` adds MuJoCo (the
-laptop robot). Leave out what you do not need; this is enough to drive the
-robot in the lab:
+`camera` adds Pillow (camera pictures as arrays) and `mock` adds MuJoCo (the laptop
+robot); leave out what you do not need. Add `video` for OpenCV's live window and
+video files, about 190 MB more.
 
-```
-pip install "g1lab @ https://github.com/rstory1/g1lab/releases/download/v0.1.2/g1lab-0.1.2-py3-none-any.whl"
-```
+In the lab, plug into the Robot Network and set your address by hand:
+[section 1 of the camera quickstart](docs/camera_quickstart.md#1-get-on-the-robot-network-and-watch-the-camera).
 
-The install with `camera` and
-`mock` is about 240 MB, 30 MB of it `g1lab` itself (mostly the robot model
-the mock uses).
-
-**OpenCV is optional.** It shows the camera in a live window and writes
-video files (`examples/record_camera.py --video`), and it is about 190 MB
-more. To include it:
-
-```
-pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.2/g1lab-0.1.2-py3-none-any.whl"
-```
-
-Without it everything else works:
-driving the robot, reading the sensors, pictures as arrays, and recording
-a dataset of pictures.
-
-In the lab, the same file is also on the lab board,
-`http://192.168.123.222:8090/`.
+To update in the lab, once installed:
+`pip install http://192.168.123.222:8090/g1lab-0.1.3-py3-none-any.whl`
 
 ## A first program
 
@@ -71,22 +49,73 @@ with r.control() as c:                             # waits for your turn
 # leaving the block lets go: the arms go home
 ```
 
-## What is here
+## What you can call
 
-| | |
+`help()` on any of these says more. Reading works any time, without a turn.
+
+| Read | Gives |
 |---|---|
-| [docs/camera_quickstart.md](docs/camera_quickstart.md) | watch the head camera, save pictures, record a dataset |
-| [examples/](examples/) | small programs: `info.py`, `wave.py`, `raise_arm.py`, `sensors.py`, `record_camera.py`; each runs with `--host mock` |
+| `r.state.joints()` | `.q`, `.target`, `.temp` of all 29 joints; `.arm("right")`; `js["R_elbow"]` |
+| `r.state.imu()` | body tilt: `.rpy` (rad), `.quat` |
+| `r.state.temps()` | `["hottest"]`, `["body"]`, `["hand_r"]`, `["hand_l"]` (deg C) |
+| `r.hands.state("right")` | `.q`, `.pads` (touch, named by `.pad_names`), `.temp` |
+| `r.camera.read()`, `r.camera.jpeg()` | `(t, picture)` as an RGB array or JPEG bytes |
+| `r.depth.read()` | `(t, xyz, rgb)` 3-D points from the camera; robot only |
+| `r.lidar.read()` | `.points()`: the lidar's 3-D points, in its own frame; robot only |
+| `r.lidar.imu()` | `.stamp`, `.gyro`, `.acc`: the lidar's own IMU, robot only |
+| `r.state.tf()` | where the lidar and camera sit on the body; robot only |
+| `r.on("joints", f)` | calls `f(value)` on each new reading; returns a function that stops it |
+| `r.info()` | `.home`, `.limits`, `.groups`, `.owner`, `.queue` |
+| `r.session()` | `.phase`, `.owner`, `.queue`, `.time_left` |
+| `r.health()` | which feeds are live |
 
+| Move, inside `with r.control() as c:` | Does |
+|---|---|
+| `c.arms.move_to(left=, right=, duration=2.0)` | go to 7 joint angles (rad) smoothly; returns when there |
+| `c.arms.set(left=, right=)` | new target now, for your own control loop; returns at once |
+| `c.arms.home()` | both arms to the standing pose |
+| `c.hands.open("right")`, `c.hands.close("right", amount=1.0)` | open or make a fist; `"left"`, `"right"` or `"both"` |
+| `c.hands.set("right", q)` | 7 hand joint angles (rad) |
+| `c.status` | the robot's last answer: `.clamped`, `.held`, `.resting`, `.refused` |
+
+An arm is 7 angles in this order: shoulder pitch, roll, yaw, elbow, wrist roll,
+pitch, yaw. Errors you can catch: `g1lab.Refused` (that pose is not allowed),
+`Busy` (someone else has the robot), `NoSession`, `NoData` (that sensor is not
+sending), `Disconnected`, `Ended` (your session is over).
+
+`r.services.start("sim")` asks the lab computer for a simulated robot.
+
+## Record a dataset
+
+Saves the sensors to a folder and reads them back on one clock, so each lidar frame
+pairs with the right joints. It only listens, so it needs no turn and the robot does
+not move. About 1.5 MB a second without depth.
+
+```python
+import g1lab
+
+with g1lab.connect("192.168.123.222", name="YOURNAME") as r:
+    rec = g1lab.Recorder(r, "run1").run(60)        # 60 s
+
+print(rec)                                         # what it got, and any gaps
+for t, cloud in rec.read("lidar"):
+    joints = rec.at("joints", t)                   # the joints at that moment
 ```
-python examples/wave.py --host mock --name YOURNAME
-```
+
+Or with no program: `python -m g1lab.record --host 192.168.123.222 --seconds 60 --out run1`.
+Add `--depth` for depth, and `python -m g1lab.record show run1` to see what is in a
+recording.
+
+## More
+
+- [docs/camera_quickstart.md](docs/camera_quickstart.md): camera pictures, depth, and
+  how a pixel lines up with a 3-D point.
+- [examples/](examples/): `info.py`, `wave.py`, `raise_arm.py`, `sensors.py`,
+  `record_camera.py`, `record_dataset.py`. Each runs with no robot:
+  `python examples/wave.py --host mock --name YOURNAME`
 
 ## Licence
 
-`g1lab` is under the Apache License 2.0 ([LICENSE](LICENSE)). The wheel
-also carries the Unitree G1 robot model and meshes, under their own terms:
-see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-This repository is written out from the lab's own code for each release
-(version 0.1.2); changes are made there, not here.
+`g1lab` is under the Apache License 2.0 ([LICENSE](LICENSE)). The wheel also carries
+the Unitree G1 robot model and meshes, under their own terms: see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
