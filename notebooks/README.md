@@ -36,4 +36,5 @@ that moves the arms needs a session the operator has started, or one from
 `r.services.start("sim")`. The ones that only read sensors do not.
 
 The Perception module on the real robot needs a real red ball, about 3 in across. The mock
-has no depth, so Camera and depth uses made-up points there and says so.
+and the simulated robot have no depth, so Camera and depth uses made-up points there and
+says so.
