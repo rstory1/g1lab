@@ -15,7 +15,7 @@ The University of Iowa).
 Python 3.8 or newer, somewhere with internet (the lab's Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.4/g1lab-0.1.4-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.5/g1lab-0.1.5-py3-none-any.whl"
 ```
 
 `camera` adds Pillow (camera pictures as arrays) and `mock` adds MuJoCo (the laptop
@@ -26,7 +26,7 @@ In the lab, plug into the Robot Network and set your address by hand:
 [section 1 of the camera quickstart](docs/camera_quickstart.md#1-get-on-the-robot-network-and-watch-the-camera).
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.4-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.5-py3-none-any.whl`
 
 ## A first program
 
@@ -112,8 +112,15 @@ recording.
 
 ## More
 
+- [docs/guide.md](docs/guide.md): every call, what each error means, the mock, the
+  language model, recording.
+- [docs/joints_and_messages.md](docs/joints_and_messages.md): which way each joint
+  turns, what the robot does to keep everyone safe, and the plain messages under `g1lab`.
 - [docs/camera_quickstart.md](docs/camera_quickstart.md): camera pictures, depth, and
   how a pixel lines up with a 3-D point.
+- [notebooks/](notebooks/): worked modules that show how to use each feature: joints and
+  kinematics, trajectories, the camera and depth, recording a dataset, services and the
+  language model, and handling refusals and errors.
 - [examples/](examples/): `info.py`, `wave.py`, `raise_arm.py`, `sensors.py`,
   `record_camera.py`, `record_dataset.py`. Each runs with no robot:
   `python examples/wave.py --host mock --name YOURNAME`
