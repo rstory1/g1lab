@@ -28,14 +28,14 @@ program will get `NoData` too.
 Python 3.8 or newer, somewhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.5/g1lab-0.1.5-py3-none-any.whl"
+pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.6/g1lab-0.1.6-py3-none-any.whl"
 ```
 
 The live window in section 4 also needs OpenCV (about 190 MB): use
 `g1lab[camera,video]` in that line.
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.5-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.6-py3-none-any.whl`
 
 ## 3. Save one picture
 

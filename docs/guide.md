@@ -21,7 +21,7 @@ when it moves to the real one.
 Anywhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.5/g1lab-0.1.5-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.6/g1lab-0.1.6-py3-none-any.whl"
 ```
 
 That brings `pyzmq`, `msgpack` and `numpy`; `camera` adds `pillow` (camera
@@ -30,7 +30,7 @@ live camera window or write video files you also need OpenCV (about 190 MB);
 to include it:
 
 ```
-pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.5/g1lab-0.1.5-py3-none-any.whl"
+pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.6/g1lab-0.1.6-py3-none-any.whl"
 ```
 
 Without it, pictures, arrays and datasets of pictures still work. The
@@ -42,7 +42,7 @@ shows who has the robot, who is next, and what the robot's camera sees.
 There, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.5-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.6-py3-none-any.whl
 ```
 
 It needs Python 3.8 or newer.
@@ -158,6 +158,41 @@ stored message instead, untouched.
 **Size:** about 1.5 MB a second, so a minute is about 90 MB. Depth adds about
 0.9 MB a second. **The clock:** every `t` is the robot computer's clock. Camera
 pictures are stamped about 50 ms before they arrived, when the robot took them.
+
+### Turning recordings into a training set
+
+One recording folder is one demo. `python -m g1lab.export` turns a set of them
+into a LeRobot v2.1 dataset, with a label for each demo saying whether it worked.
+
+```
+pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.6/g1lab-0.1.6-py3-none-any.whl"
+python -m g1lab.export pick_01 pick_02 pick_03 --out pick --task "pick up the cube" --success mine.py
+```
+
+`mine.py` holds your rule for a good demo, which gets the `Recording`:
+
+```python
+def success(rec):
+    t, joints = rec.at("joints", rec.t1)
+    return joints.q[15] < -0.5
+```
+
+`--only-success` leaves the failed demos out. `--label true` or `--label false`
+gives them all the same label. Without either, the label is null.
+
+Each frame's state is the 29 body joints, both hands and projected gravity (46
+numbers). Its action is the body joints one frame later and both hands' commanded
+joints (43 numbers). The picture is the head camera at 15 frames a second, so
+record with the camera on. The tool says so when a demo has none. This
+data has no `motion_token`, so GR00T N1.7's `unitree_g1_sonic` head cannot train on it.
+
+## Policies
+
+A policy is your network or Python class driving the arms and hands 50 times a
+second. `g1lab.policy` holds the `Policy` class to write one, `NetworkPolicy` to
+load a TorchScript file, and the tools to try it on the mock. You hand
+the operator a folder, and the operator runs it in the simulator, then on the
+robot. See [policy.md](policy.md).
 
 ## When something goes wrong
 
