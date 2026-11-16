@@ -252,7 +252,7 @@ r.close()
 Going the other way, a pixel `(u, v)` looks along the direction
 `(1, (325.3 - u) / 352.1, (234.6 - v) / 352.1)`: forward, left, up.
 
-## Practise without the robot
+## Practice without the robot
 
 `g1lab.mock()` instead of `g1lab.connect(...)` plays a short recorded clip of the
 lab through `r.camera`, so the picture code above runs anywhere, with no network.
