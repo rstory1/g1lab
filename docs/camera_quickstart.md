@@ -1,8 +1,7 @@
 # The robot's camera: see it, save pictures, record
 
 The robot has a camera in its head (a ZED 2i). You can watch it and save its
-pictures from your own laptop. **None of this moves the robot, and you do not
-need a session or a turn:** anyone on the Robot Network can read the camera at
+pictures from your own laptop. Anyone on the Robot Network can read the camera at
 the same time.
 
 ## 1. Get on the Robot Network and watch the camera
