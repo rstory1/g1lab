@@ -1,7 +1,8 @@
 # The robot's camera: see it, save pictures, record
 
 The robot has a camera in its head (a ZED 2i). You can watch it and save its
-pictures from your own laptop. Anyone on the Robot Network can read the camera at
+pictures from your own laptop. **None of this moves the robot, and you do not
+need a session or a turn:** anyone on the Robot Network can read the camera at
 the same time.
 
 ## 1. Get on the Robot Network and watch the camera
@@ -27,14 +28,18 @@ program will get `NoData` too.
 Python 3.8 or newer, somewhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.7/g1lab-0.1.7-py3-none-any.whl"
+pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.8/g1lab-0.1.8-py3-none-any.whl"
 ```
 
 The live window in section 4 also needs OpenCV (about 190 MB): use
 `g1lab[camera,video]` in that line.
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.7-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.8-py3-none-any.whl`
+
+Then, on the Robot Network, `python -m g1lab.check --name YOURNAME`: one line per
+check with the fix, from your address to whether the camera's stream (port 5601)
+reaches you. Nothing moves.
 
 ## 3. Save one picture
 
@@ -46,7 +51,7 @@ t, jpeg = r.camera.jpeg()                              # the newest picture, as 
 open("view.jpg", "wb").write(jpeg)
 
 t, img = r.camera.read()                               # the same, as a numpy array
-print(img.shape)                                       # (480, 640, 3), colours in RGB order
+print(img.shape)                                       # (480, 640, 3), colors in RGB order
 r.close()
 ```
 
@@ -110,10 +115,10 @@ if len(ahead):
 np.savez("depth.npz", t=t, xyz=xyz, rgb=rgb)           # keep it for later
 ```
 
-- **`xyz`** is one row per point, in metres, from the camera's left eye:
+- **`xyz`** is one row per point, in meters, from the camera's left eye:
   **x forward, y to the robot's left, z up**. The camera moves with the
   head, so these are not room coordinates.
-- **`rgb`** is each point's colour (0 to 255), row for row with `xyz`.
+- **`rgb`** is each point's color (0 to 255), row for row with `xyz`.
 - **`t`** is when the camera took it, by the robot's clock, like the
   pictures' `t`.
 - Only points the camera could measure are there: from about 0.3 m
@@ -138,13 +143,13 @@ import g1lab
 r = g1lab.connect("192.168.123.222", name="YOURNAME")
 r.services.start("zed", wait=180)           # about a minute the first time
 
-t, depth = r.depth.image(timeout=60)        # float32, 480 x 640, metres; NaN where unmeasured
+t, depth = r.depth.image(timeout=60)        # float32, 480 x 640, meters; NaN where unmeasured
                                             # (the first one comes a few seconds after "running")
 t, img = r.camera.read()                    # the same pixels: depth[v, u] is the distance at img[v, u]
-print("centre of the picture:", np.nanmedian(depth[230:250, 310:330]).round(2), "m")
+print("center of the picture:", np.nanmedian(depth[230:250, 310:330]).round(2), "m")
 print("measured:", round(100 * np.isfinite(depth).mean()), "% of pixels")
 
-for o in r.zed.objects():                   # things the ZED recognises
+for o in r.zed.objects():                   # things the ZED recognizes
     print(o.label, o.confidence, "at", o.position.round(2), "m, box", o.bbox)
 
 for body in r.zed.bodies():                 # people, with a skeleton
@@ -171,7 +176,7 @@ minutes after your program stops using it. The card is shared: if it is too
 full `start` says so with the numbers.
 
 - **The depth image lines up with the picture, pixel for pixel.** Both are
-  640 x 480 and use the same lens numbers (focal length 352.1, centre
+  640 x 480 and use the same lens numbers (focal length 352.1, center
   325.3, 234.6, as in the section above), so `depth[v, u]` is the distance at
   `img[v, u]`. A pixel `(u, v)` at distance `d` is the point
   `x = d`, `y = d * (325.3 - u) / 352.1`, `z = d * (234.6 - v) / 352.1`
@@ -184,16 +189,16 @@ full `start` says so with the numbers.
 - **Objects** (`r.zed.objects()`): each has `id` (the same while the ZED
   keeps tracking it), `label` (PERSON, VEHICLE, BAG, ANIMAL, ELECTRONICS,
   FRUIT_VEGETABLE or SPORT), `confidence` (0 to 100), `position` and
-  `velocity` (metres, in the camera's frame: forward, left, up), `dimensions`,
+  `velocity` (meters, in the camera's frame: forward, left, up), `dimensions`,
   and `bbox`, the box `(x0, y0, x1, y1)` **in the pixels of the 640 x 480 picture**
   (`None` when the thing is in a side strip the picture does not show). An empty
   list means the ZED sees nothing, not that it is off.
 - **Bodies** (`r.zed.bodies()`): each person has 18 keypoints (the ZED's
   `BODY_18` skeleton: nose, neck, shoulders, elbows, wrists, hips, knees,
-  ankles, eyes, ears). `keypoints` are 3-D points in metres, `keypoints_2d` are
+  ankles, eyes, ears). `keypoints` are 3-D points in meters, `keypoints_2d` are
   pixels of the picture, and `body.kp("r_wrist")` reads one by name. A joint the
   ZED cannot see is `NaN`, so check `np.isfinite`.
-- **Pose** (`r.zed.pose()`): where the camera is, as `position` (metres) and
+- **Pose** (`r.zed.pose()`): where the camera is, as `position` (meters) and
   `quat` (w, x, y, z), in a level frame set when the service started: z
   straight up, x the way the camera faced then, flattened, y left. The head
   camera looks down, so even at the start `quat` is not (1, 0, 0, 0): it
@@ -229,7 +234,7 @@ yourself: [zed_sdk_direct.md](zed_sdk_direct.md).
 
 The picture and the depth points share one lens, so you can put a depth point on
 the picture, or find how far away something in the picture is. For the 640 × 480
-picture, in pixels: focal length **352.1**, centre **325.3, 234.6**.
+picture, in pixels: focal length **352.1**, center **325.3, 234.6**.
 
 ```python
 import numpy as np
@@ -266,6 +271,7 @@ draws a simulated camera view with a red ball instead.
 | The browser cannot open the lab board | Your laptop is not on the Robot Network: see section 1 |
 | `NoData` after 2 seconds | The camera is not sending; the lab board says "No picture from the camera" |
 | `NoData` from `r.depth.image()` or `r.zed...` | The zed service is not running: `r.services.start("zed")` |
+| `NoData` "in a SIM session", or `ServiceRefused` "a SIM session is running" | The ZED's data comes from the real camera only; in SIM use `r.camera.read()` |
 | `ServiceRefused` from `start("zed")` | The graphics card is too full right now; the message gives the numbers. Try again later or ask the operator |
 | `ModuleNotFoundError: PIL` | `pip install pillow` (needed for `camera.read()`) |
-| Colours look wrong in OpenCV | Convert RGB to BGR, as in section 4 |
+| Colors look wrong in OpenCV | Convert RGB to BGR, as in section 4 |

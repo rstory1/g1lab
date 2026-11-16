@@ -44,7 +44,7 @@ def centre_depth(depth):
 
 def report(r):
     """One line about each thing the ZED sees right now."""
-    t, depth = r.depth.image()                      # 480 x 640 metres, NaN = not measured
+    t, depth = r.depth.image()                      # 480 x 640 meters, NaN = not measured
     print(f"depth: {centre_depth(depth):.2f} m straight ahead, "
           f"{100 * np.isfinite(depth).mean():.0f} % of pixels measured")
     for o in r.zed.objects():

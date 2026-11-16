@@ -121,7 +121,7 @@ def main():
             if time.time() < next_print:
                 continue
             next_print = time.time() + 1.0
-            cam.retrieve_measure(depth, sl.MEASURE.DEPTH)        # h x w metres, NaN / inf = none
+            cam.retrieve_measure(depth, sl.MEASURE.DEPTH)        # h x w meters, NaN / inf = none
             err, z = depth.get_value(w // 2, h // 2)
             print(f"straight ahead: {z:.2f} m" if math.isfinite(z) else "straight ahead: no depth")
             if a.objects:
