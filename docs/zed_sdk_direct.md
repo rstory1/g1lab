@@ -104,7 +104,7 @@ same major version. The lab workstation's SDK 5.5.1 opens it fine (checked
    service among them. If the service is running and the card is busy, you
    will both be slower.
 
-## Practise without the robot
+## Practice without the robot
 
 The camera server records episodes as **SVO2 files** (both eyes and the IMU).
 You can play one back with the same SDK on any NVIDIA computer, with no robot
