@@ -15,7 +15,7 @@ The University of Iowa).
 Python 3.8 or newer, somewhere with internet (the lab's Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.6/g1lab-0.1.6-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.7/g1lab-0.1.7-py3-none-any.whl"
 ```
 
 `camera` adds Pillow (camera pictures as arrays) and `mock` adds MuJoCo (the laptop
@@ -26,7 +26,7 @@ In the lab, plug into the Robot Network and set your address by hand:
 [section 1 of the camera quickstart](docs/camera_quickstart.md#1-get-on-the-robot-network-and-watch-the-camera).
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.6-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.7-py3-none-any.whl`
 
 ## A first program
 
@@ -114,7 +114,7 @@ Recordings become a LeRobot training set, one folder per demo, with your own rul
 for which demos worked:
 
 ```
-pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.6/g1lab-0.1.6-py3-none-any.whl"
+pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.7/g1lab-0.1.7-py3-none-any.whl"
 python -m g1lab.export run1 run2 run3 --out pick --task "pick up the cube" --success mine.py
 ```
 
@@ -134,7 +134,9 @@ python -m g1lab.export run1 run2 run3 --out pick --task "pick up the cube" --suc
   kinematics, trajectories, the camera and depth, recording a dataset, services and the
   language model, and handling refusals and errors.
 - [examples/](examples/): `info.py`, `wave.py`, `raise_arm.py`, `sensors.py`,
-  `record_camera.py`, `record_dataset.py`. Each runs with no robot:
+  `record_camera.py`, `record_dataset.py`, `zed_easy.py` (the ZED's depth image, objects,
+  people and pose), `zed_sdk.py` (the ZED SDK yourself, see
+  [docs/zed_sdk_direct.md](docs/zed_sdk_direct.md)). Each but `zed_sdk.py` runs with no robot:
   `python examples/wave.py --host mock --name YOURNAME`
 
 ## Licence

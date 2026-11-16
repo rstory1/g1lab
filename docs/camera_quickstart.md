@@ -28,14 +28,14 @@ program will get `NoData` too.
 Python 3.8 or newer, somewhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.6/g1lab-0.1.6-py3-none-any.whl"
+pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.7/g1lab-0.1.7-py3-none-any.whl"
 ```
 
 The live window in section 4 also needs OpenCV (about 190 MB): use
 `g1lab[camera,video]` in that line.
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.6-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.7-py3-none-any.whl`
 
 ## 3. Save one picture
 
@@ -125,6 +125,92 @@ np.savez("depth.npz", t=t, xyz=xyz, rgb=rgb)           # keep it for later
 - Depth comes only from the robot: `g1lab.mock()` has none (`r.depth.read()`
   there raises `NoData`).
 
+## 7. Depth for every pixel, and the ZED's objects, bodies and pose
+
+Section 6 gives you 3-D points. The ZED's own software can also give you
+a **depth image** (a distance for every pixel of the picture) and can find
+**things and people** in the picture and track **where the camera is**. These
+take the workstation's graphics card, so they are **off until you ask**:
+
+```python
+import numpy as np
+import g1lab
+
+r = g1lab.connect("192.168.123.222", name="YOURNAME")
+r.services.start("zed", wait=180)           # about a minute the first time
+
+t, depth = r.depth.image(timeout=60)        # float32, 480 x 640, metres; NaN where unmeasured
+                                            # (the first one comes a few seconds after "running")
+t, img = r.camera.read()                    # the same pixels: depth[v, u] is the distance at img[v, u]
+print("centre of the picture:", np.nanmedian(depth[230:250, 310:330]).round(2), "m")
+print("measured:", round(100 * np.isfinite(depth).mean()), "% of pixels")
+
+for o in r.zed.objects():                   # things the ZED recognises
+    print(o.label, o.confidence, "at", o.position.round(2), "m, box", o.bbox)
+
+for body in r.zed.bodies():                 # people, with a skeleton
+    print(body.id, "right wrist at", body.kp("r_wrist").round(2), "m")
+
+print(r.zed.pose().position)                # where the camera is now
+r.close()
+```
+
+**The example program.** `examples/zed_easy.py` does all of this and
+prints what the ZED sees once a second:
+
+```
+python examples/zed_easy.py --host 192.168.123.222 --name YOURNAME
+python examples/zed_easy.py --host 192.168.123.222 --name YOURNAME --seconds 30 --picture seen.jpg
+```
+
+`--picture` saves the camera picture with the boxes, the skeletons and a few
+distances drawn on it (it needs Pillow, g1lab's `camera` option). With
+`--host mock` it runs too, and says the mock has no ZED.
+
+When you are done, `r.services.stop("zed")`; it also stops by itself 10
+minutes after your program stops using it. The card is shared: if it is too
+full `start` says so with the numbers.
+
+- **The depth image lines up with the picture, pixel for pixel.** Both are
+  640 x 480 and use the same lens numbers (focal length 352.1, centre
+  325.3, 234.6, as in the section above), so `depth[v, u]` is the distance at
+  `img[v, u]`. A pixel `(u, v)` at distance `d` is the point
+  `x = d`, `y = d * (325.3 - u) / 352.1`, `z = d * (234.6 - v) / 352.1`
+  (forward, left, up). Note that `d` is the distance straight out from the camera, not the
+  distance along the pixel's ray.
+- **`NaN` means no measurement** (too near, too shiny, too far, or hidden from
+  one eye), not zero. Use `np.isfinite(depth)` or `np.nanmedian(...)`.
+- **Up to 5 depth images a second.** They are about 200 to 300 KB each, so a
+  program that only wants the 3-D points of section 6 does not receive them.
+- **Objects** (`r.zed.objects()`): each has `id` (the same while the ZED
+  keeps tracking it), `label` (PERSON, VEHICLE, BAG, ANIMAL, ELECTRONICS,
+  FRUIT_VEGETABLE or SPORT), `confidence` (0 to 100), `position` and
+  `velocity` (metres, in the camera's frame: forward, left, up), `dimensions`,
+  and `bbox`, the box `(x0, y0, x1, y1)` **in the pixels of the 640 x 480 picture**
+  (`None` when the thing is in a side strip the picture does not show). An empty
+  list means the ZED sees nothing, not that it is off.
+- **Bodies** (`r.zed.bodies()`): each person has 18 keypoints (the ZED's
+  `BODY_18` skeleton: nose, neck, shoulders, elbows, wrists, hips, knees,
+  ankles, eyes, ears). `keypoints` are 3-D points in metres, `keypoints_2d` are
+  pixels of the picture, and `body.kp("r_wrist")` reads one by name. A joint the
+  ZED cannot see is `NaN`, so check `np.isfinite`.
+- **Pose** (`r.zed.pose()`): where the camera is, as `position` (metres) and
+  `quat` (w, x, y, z), in a level frame set when the service started: z
+  straight up, x the way the camera faced then, flattened, y left. The head
+  camera looks down, so even at the start `quat` is not (1, 0, 0, 0): it
+  holds that tilt. The service forgets the frame when it restarts. The camera moves with the
+  robot's head, so this follows the head, not the room.
+- Every one has a `t`, on the robot's clock like the pictures'. To get each
+  one as it arrives, use `r.on("depth.image", f)`, `r.on("zed.objects", f)`,
+  `r.on("zed.bodies", f)` or `r.on("zed.pose", f)`.
+- With no data, each call raises `NoData` and says to start the service.
+  `g1lab.mock()` has none of this: it raises `NoData` too.
+- Checked on the robot on 2026-11-16. Tell the operator if a number looks wrong.
+
+**Want the ZED SDK itself?** If you would rather call the ZED's own API (its
+settings, its other detectors, your own depth mode), open the camera's stream
+yourself: [zed_sdk_direct.md](zed_sdk_direct.md).
+
 ## What the pictures are
 
 - **640 × 480**, from the camera's **left eye**, corrected for lens
@@ -137,7 +223,8 @@ np.savez("depth.npz", t=t, xyz=xyz, rgb=rgb)           # keep it for later
 - **Both eyes at full size** are only for computing depth your own way. They
   come from the ZED SDK stream at `192.168.123.164:30000`, which only the ZED
   SDK can open, and the SDK needs an NVIDIA graphics card (the lab
-  workstation has one; most laptops do not).
+  workstation has one; most laptops do not). Section 7 uses it for you; to use it
+  yourself see [zed_sdk_direct.md](zed_sdk_direct.md).
 
 ## Which pixel is a 3-D point
 
@@ -179,5 +266,7 @@ draws a simulated camera view with a red ball instead.
 |---|---|
 | The browser cannot open the lab board | Your laptop is not on the Robot Network: see section 1 |
 | `NoData` after 2 seconds | The camera is not sending; the lab board says "No picture from the camera" |
+| `NoData` from `r.depth.image()` or `r.zed...` | The zed service is not running: `r.services.start("zed")` |
+| `ServiceRefused` from `start("zed")` | The graphics card is too full right now; the message gives the numbers. Try again later or ask the operator |
 | `ModuleNotFoundError: PIL` | `pip install pillow` (needed for `camera.read()`) |
 | Colours look wrong in OpenCV | Convert RGB to BGR, as in section 4 |

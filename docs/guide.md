@@ -21,7 +21,7 @@ when it moves to the real one.
 Anywhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.6/g1lab-0.1.6-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.7/g1lab-0.1.7-py3-none-any.whl"
 ```
 
 That brings `pyzmq`, `msgpack` and `numpy`; `camera` adds `pillow` (camera
@@ -30,7 +30,7 @@ live camera window or write video files you also need OpenCV (about 190 MB);
 to include it:
 
 ```
-pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.6/g1lab-0.1.6-py3-none-any.whl"
+pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.7/g1lab-0.1.7-py3-none-any.whl"
 ```
 
 Without it, pictures, arrays and datasets of pictures still work. The
@@ -42,7 +42,7 @@ shows who has the robot, who is next, and what the robot's camera sees.
 There, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.6-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.7-py3-none-any.whl
 ```
 
 It needs Python 3.8 or newer.
@@ -85,7 +85,9 @@ Reading works any time, without a session and without waiting your turn.
 | `r.hands.state("right")` | `q` (7 finger angles), `pads` (9 touch pads, names in `pad_names`), `temp` |
 | `r.camera.read()` | `(t, picture)`: an array of height × width × 3 colours (needs Pillow). `r.camera.jpeg()` gives the JPEG file instead |
 | `r.depth.read()` | `(t, xyz, rgb)`: 3-D points in metres and their colours |
-| `r.on("joints", f)` | calls `f(js)` for every new reading, in the background. Also `"imu"`, `"hands.right"`, `"hands.left"`, `"temps"`, `"camera"`, `"depth"`, `"lidar"`, `"head_imu"`, `"tf"`, `"session"`. It returns a function: call it to stop |
+| `r.depth.image()` | `(t, depth)`: a distance in metres for every pixel of the camera picture, `NaN` where it could not measure. **Needs `r.services.start("zed")`**: see [the camera quickstart](camera_quickstart.md#7-depth-for-every-pixel-and-the-zeds-objects-bodies-and-pose) |
+| `r.zed.objects()`, `r.zed.bodies()`, `r.zed.pose()` | what the ZED SDK works out from the camera: the things and people it sees (boxes and skeletons, in 3-D and on the picture) and where the camera is. Also needs `r.services.start("zed")` |
+| `r.on("joints", f)` | calls `f(js)` for every new reading, in the background. Also `"imu"`, `"hands.right"`, `"hands.left"`, `"temps"`, `"camera"`, `"depth"`, `"depth.image"`, `"lidar"`, `"head_imu"`, `"tf"`, `"zed.objects"`, `"zed.bodies"`, `"zed.pose"`, `"session"`. It returns a function: call it to stop |
 
 A read gives the newest reading. If a sensor has sent nothing for a while,
 the read waits up to 2 seconds and then raises `NoData`.
@@ -143,7 +145,7 @@ From a terminal: `python -m g1lab.record --host 192.168.123.222 --seconds 60
 
 | Call | What you get |
 |---|---|
-| `Recorder(source, out, topics)` | `source` is the robot computer's address, or a connected robot or mock. `out` is a new folder (default `recording_<date>_<time>`). `topics` narrows what is kept; the default is everything but depth, and `g1lab.recording.ALL_TOPICS` adds it. It stops by itself with less than 1 GB left on the disk |
+| `Recorder(source, out, topics)` | `source` is the robot computer's address, or a connected robot or mock. `out` is a new folder (default `recording_<date>_<time>`). `topics` narrows what is kept; the default is everything but depth and the ZED topics (`depth.image`, `zed.objects`, `zed.bodies`, `zed.pose`), and `g1lab.recording.ALL_TOPICS` adds them. It stops by itself with less than 1 GB left on the disk |
 | `rec.run(seconds)`, `rec.start()`, `rec.stop()`, `rec.counts()` | record for that long (until Ctrl-C with no number); start and stop in the background (`stop()` and `run()` return the Recording); readings so far, per sensor |
 | `run.read(topic, start, end)` | every reading in that time span as `(t, value)` |
 | `run.at(topic, t, max_age)` | the newest reading at or before `t` as `(t, value)`, `None` if none is that recent |
@@ -151,7 +153,7 @@ From a terminal: `python -m g1lab.record --host 192.168.123.222 --seconds 60
 | `run.stamps(topic)` | all of a sensor's times, as an array |
 | `run.topics`, `run.t0`, `run.t1`, `run.duration`, `run.summary()` | what the folder holds |
 
-A camera value is the picture, a depth value is `(xyz, rgb)`, and every other
+A camera value is the picture, a depth value is `(xyz, rgb)`, a `zed.depth` value is the depth image, and every other
 value is the same dictionary the stream carries. Pass `raw=True` to get the
 stored message instead, untouched.
 
@@ -165,7 +167,7 @@ One recording folder is one demo. `python -m g1lab.export` turns a set of them
 into a LeRobot v2.1 dataset, with a label for each demo saying whether it worked.
 
 ```
-pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.6/g1lab-0.1.6-py3-none-any.whl"
+pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.7/g1lab-0.1.7-py3-none-any.whl"
 python -m g1lab.export pick_01 pick_02 pick_03 --out pick --task "pick up the cube" --success mine.py
 ```
 
@@ -228,6 +230,7 @@ r.services.start("sim", wait=120)    # a simulated robot for your program; tens 
 with r.control() as c:               # then use it as usual
     ...
 r.services.start("llm", wait=120)    # the language model on the robot computer
+r.services.start("zed", wait=180)    # the ZED's depth image, objects, bodies and pose (r.zed)
 print(r.services.status("llm"))      # ServiceInfo(name='llm', state='running', programs=1, ...)
 r.services.stop("llm")               # you are done with it
 print(r.services.status())           # every service: what it is, and whether it runs
@@ -240,6 +243,13 @@ print(r.services.status())           # every service: what it is, and whether it
   graphics card, and the robot's controller must always keep 2 GB, so it is
   refused when the card is too full (the reason gives the numbers), and
   while the real robot is running, since it would slow the robot's controller.
+- **zed** is the ZED SDK's depth image, objects, bodies and pose (`r.depth.image()`,
+  `r.zed.objects()`, `r.zed.bodies()`, `r.zed.pose()`). It takes about 3 GB of the
+  graphics card (a guess, not measured yet) and is refused, with the numbers, when
+  the card cannot also keep the robot's controller its 2 GB. Unlike the model it
+  is allowed while the real robot runs, but it shares the card with the controller,
+  so stop it when you are done. Built and tested with fake data, not yet run on
+  the real camera. See [the camera quickstart](camera_quickstart.md#7-depth-for-every-pixel-and-the-zeds-objects-bodies-and-pose).
 - **deploy, session** move the robot. Only the
   operator starts them, from the launcher; `start()` raises
   `g1lab.ServiceRefused` saying so.
@@ -366,6 +376,8 @@ In [examples/](../examples/) (run them with `--host` and `--name`):
 | `sensors.py` | reads the joints, tilt, hand pads, temperatures and one camera picture |
 | `record_dataset.py` | records all the sensors to a folder, then lines each lidar reading up with the joints at that moment |
 | `record_camera.py` | records the head camera to numbered JPEGs (and an MP4 with `--video`) for a dataset; see [lab/camera_quickstart.md](camera_quickstart.md) |
+| `zed_easy.py` | the ZED's depth image, objects, people and pose the easy way, through `g1lab` (starts the zed service); `--picture` draws them on the camera picture; see [lab/camera_quickstart.md](camera_quickstart.md) section 7 |
+| `zed_sdk.py` | the ZED SDK yourself: opens the robot's camera stream with pyzed (no `g1lab`), your own depth, `--objects` for detection, `--svo` for a recording; see [lab/zed_sdk_direct.md](zed_sdk_direct.md) |
 
 ## Modules
 
