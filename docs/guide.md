@@ -21,7 +21,7 @@ when it moves to the real one.
 Anywhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.8/g1lab-0.1.8-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.9/g1lab-0.1.9-py3-none-any.whl"
 ```
 
 That brings `pyzmq`, `msgpack` and `numpy`; `camera` adds `pillow` (camera
@@ -30,7 +30,7 @@ live camera window or write video files you also need OpenCV (about 190 MB);
 to include it:
 
 ```
-pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.8/g1lab-0.1.8-py3-none-any.whl"
+pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.9/g1lab-0.1.9-py3-none-any.whl"
 ```
 
 Without it, pictures, arrays and datasets of pictures still work. The
@@ -42,7 +42,7 @@ shows who has the robot, who is next, and what the robot's camera sees.
 There, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.8-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.9-py3-none-any.whl
 ```
 
 It needs Python 3.8 or newer.
@@ -181,7 +181,7 @@ One recording folder is one demo. `python -m g1lab.export` turns a set of them
 into a LeRobot v2.1 dataset, with a label for each demo saying whether it worked.
 
 ```
-pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.8/g1lab-0.1.8-py3-none-any.whl"
+pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.9/g1lab-0.1.9-py3-none-any.whl"
 python -m g1lab.export pick_01 pick_02 pick_03 --out pick --task "pick up the cube" --success mine.py
 ```
 
@@ -252,6 +252,9 @@ print(r.services.status())           # every service: what it is, and whether it
 
 - **sim** is a simulator session that only ever drives the simulated robot.
   Only one runs at a time, and never while the real robot is on.
+- **walk** is the same kind of session with the simulated robot walking: see
+  [walk_reach_missions.md](walk_reach_missions.md). It and `sim` share
+  one simulator, so only one of the two runs.
 - **llm** is the language model (it answers on port 8080 of the robot
   computer, for programs running there). It needs about 22.5 GB of the
   graphics card, and the robot's controller must always keep 2 GB, so it is
@@ -392,6 +395,19 @@ In [examples/](../examples/) (run them with `--host` and `--name`):
 | `record_camera.py` | records the head camera to numbered JPEGs (and an MP4 with `--video`) for a dataset; see [lab/camera_quickstart.md](camera_quickstart.md) |
 | `zed_easy.py` | the ZED's depth image, objects, people and pose the easy way, through `g1lab` (starts the zed service); `--picture` draws them on the camera picture; see [lab/camera_quickstart.md](camera_quickstart.md) section 7 |
 | `zed_sdk.py` | the ZED SDK yourself: opens the robot's camera stream with pyzed (no `g1lab`), your own depth, `--objects` for detection, `--svo` for a recording; see [lab/zed_sdk_direct.md](zed_sdk_direct.md) |
+| `go_to_basic.py` | walks to a point 1 m ahead with `r.nav.go_to()` and prints the result and reason (walking mock, or the walking simulator) |
+| `reach_basic.py` | plans a right-hand reach to a point in front (pre-grasp, grasp, or `Unreachable`); `--move` moves the arm there and corrects with `refine()` |
+| `mission_basic.yaml`, `mission_basic.py` | a find, approach, pick mission, as a file and in Python, run on the mock in a pretend room (`g1lab.mockworld`) |
+| `carry_while_walking.py` | holds the right arm out and walks 1 m (`mock(nav="lab", arms=True)`, or the walking simulator) |
+
+The last four are explained, with what each result means, in
+[lab/walk_reach_missions.md](walk_reach_missions.md).
+
+## Missions
+
+A list of skills (find, go_to, approach, pick, place, drop, home) that runs as one program,
+from a YAML file or from Python. From the 0.1.9 wheel (`pip install g1lab[missions]` for YAML).
+See [missions.md](missions.md).
 
 ## Modules
 

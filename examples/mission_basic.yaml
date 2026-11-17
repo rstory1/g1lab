@@ -1,0 +1,15 @@
+# Find a cup, walk up to it, pick it up, arms home.
+#   python -m g1lab.mission check mission_basic.yaml     # checks it; nothing moves
+#   python -m g1lab.mission steps mission_basic.yaml     # every step with its defaults
+#   python mission_basic.py                              # runs it on the laptop, in a pretend room
+mission: fetch_cup
+description: Find the cup, walk to 0.3 m from it, pick it up with the right hand, arms home.
+timeout: 120                  # seconds for the whole mission
+params:
+  label: cup                  # what the detector calls the object; --param label=bottle changes it
+  verify: pads                # check the touch pads after closing; none skips the check
+steps:
+  - find: {label: "${label}", scan: true}           # turn in place until it is seen
+  - approach: {target: "${label}", standoff: 0.3}   # walk to 0.3 m from it, facing it
+  - pick: {target: "${label}", hand: right, verify: "${verify}"}
+  - home: {hands: keep}                             # arms home, the hand stays closed

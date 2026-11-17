@@ -2,8 +2,9 @@
 
 Drive and read a Unitree G1 humanoid from your own Python program: its arms and
 hands by joint angles, and its joints, tilt, hand pads, temperatures, camera,
-depth and lidar. The robot keeps its own balance; your program never touches the
-legs.
+depth and lidar; and, new in 0.1.9, walk it to a point on a map, plan an arm reach and
+run missions in the walking simulator. The robot keeps its own balance; your program
+never drives the legs' joints.
 
 The same program runs on your laptop with no robot (`g1lab.mock()` refuses what
 the robot refuses), on the simulated robot in the lab, and on the real robot.
@@ -15,7 +16,7 @@ The University of Iowa).
 Python 3.8 or newer, somewhere with internet (the lab's Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.8/g1lab-0.1.8-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.9/g1lab-0.1.9-py3-none-any.whl"
 ```
 
 `camera` adds Pillow (camera pictures as arrays) and `mock` adds MuJoCo (the laptop
@@ -26,7 +27,7 @@ In the lab, plug into the Robot Network and set your address by hand:
 [section 1 of the camera quickstart](docs/camera_quickstart.md#1-get-on-the-robot-network-and-watch-the-camera).
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.8-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.9-py3-none-any.whl`
 
 Check you are ready: `python -m g1lab.check --host mock` anywhere, then
 `python -m g1lab.check --name YOURNAME` in the lab. Each line says ok, note or FAIL,
@@ -53,6 +54,7 @@ with r.control() as c:                             # waits for your turn
     c.hands.close("right")
     time.sleep(5)                                  # the arm stays up: g1lab keeps sending
 # leaving the block lets go: the arms go home
+r.close()
 ```
 
 ## What you can call
@@ -120,11 +122,32 @@ Recordings become a LeRobot training set, one folder per demo, with your own rul
 for which demos worked:
 
 ```
-pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.8/g1lab-0.1.8-py3-none-any.whl"
+pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.9/g1lab-0.1.9-py3-none-any.whl"
 python -m g1lab.export run1 run2 run3 --out pick --task "pick up the cube" --success mine.py
 ```
 
 [docs/guide.md](docs/guide.md#turning-recordings-into-a-training-set) says what goes in `mine.py`.
+
+## Walk, reach and run missions (new in 0.1.9)
+
+In the lab these run in the walking simulator, which your program starts with
+`r.services.start("walk")`; not on the real robot yet. On a laptop:
+
+```python
+import g1lab
+
+r = g1lab.mock(name="YOURNAME", nav="lab")       # a pretend room; arms=True lets the arms carry too
+p = r.nav.pose()                                 # x, y (m), yaw (rad) on the map
+with r.control() as c:
+    h = r.nav.go_to(p.x + 1.0, p.y, yaw=0.0)     # plan a route and walk it
+print(h.result, h.reason)                        # "arrived", or why not
+r.close()
+```
+
+`g1lab.reach` plans the right arm onto a point (`Unreachable` says why it cannot), and
+`g1lab.mission` runs skills in a row (find, approach, pick, ...) from Python or a YAML
+file (add `missions` to the extras in the install line for YAML). Every result, every
+error and the safety rules: [docs/walk_reach_missions.md](docs/walk_reach_missions.md).
 
 ## More
 
@@ -134,6 +157,9 @@ python -m g1lab.export run1 run2 run3 --out pick --task "pick up the cube" --suc
   turns, what the robot does to keep everyone safe, and the plain messages under `g1lab`.
 - [docs/policy.md](docs/policy.md): your own network or class driving the arms and
   hands 50 times a second, tried on the mock, then handed to the operator.
+- [docs/walk_reach_missions.md](docs/walk_reach_missions.md): walking to a point, the arm
+  reach solver, missions, and carrying while walking; [docs/missions.md](docs/missions.md):
+  every skill and what each failure means.
 - [docs/camera_quickstart.md](docs/camera_quickstart.md): camera pictures, depth, and
   how a pixel lines up with a 3-D point.
 - [notebooks/](notebooks/): worked modules that show how to use each feature: joints and
@@ -142,7 +168,9 @@ python -m g1lab.export run1 run2 run3 --out pick --task "pick up the cube" --suc
 - [examples/](examples/): `info.py`, `wave.py`, `raise_arm.py`, `sensors.py`,
   `record_camera.py`, `record_dataset.py`, `zed_easy.py` (the ZED's depth image, objects,
   people and pose), `zed_sdk.py` (the ZED SDK yourself, see
-  [docs/zed_sdk_direct.md](docs/zed_sdk_direct.md)). Each but `zed_sdk.py` runs with no robot:
+  [docs/zed_sdk_direct.md](docs/zed_sdk_direct.md)), and new in 0.1.9 `go_to_basic.py`,
+  `reach_basic.py`, `mission_basic.py` (with `mission_basic.yaml`) and
+  `carry_while_walking.py`. Each but `zed_sdk.py` runs with no robot:
   `python examples/wave.py --host mock --name YOURNAME`
 
 ## Licence
