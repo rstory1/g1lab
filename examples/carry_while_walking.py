@@ -34,6 +34,6 @@ with r.control() as c:
     c.hands.close("right", amount=0.5)                 # a loose grip
     h = r.nav.go_to(p.x + a.meters * math.cos(p.yaw), p.y + a.meters * math.sin(p.yaw), yaw=p.yaw)
     print("walk:", h.result, h.reason or "")           # the arm stayed where you put it
-    print("arm now:", [round(v, 2) for v in r.state.joints().arm("right")])
+    print("arm now:", [round(float(v), 2) for v in r.state.joints().arm("right")])
     c.arms.home()                                      # put it down before letting go
 r.close()
