@@ -21,7 +21,7 @@ when it moves to the real one.
 Anywhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.10/g1lab-0.1.10-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.11/g1lab-0.1.11-py3-none-any.whl"
 ```
 
 That brings `pyzmq`, `msgpack` and `numpy`; `camera` adds `pillow` (camera
@@ -30,7 +30,7 @@ live camera window or write video files you also need OpenCV (about 190 MB);
 to include it:
 
 ```
-pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.10/g1lab-0.1.10-py3-none-any.whl"
+pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.11/g1lab-0.1.11-py3-none-any.whl"
 ```
 
 Without it, pictures, arrays and datasets of pictures still work. The
@@ -42,7 +42,7 @@ shows who has the robot, who is next, and what the robot's camera sees.
 There, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.10-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.11-py3-none-any.whl
 ```
 
 It needs Python 3.8 or newer.
@@ -181,7 +181,7 @@ One recording folder is one demo. `python -m g1lab.export` turns a set of them
 into a LeRobot v2.1 dataset, with a label for each demo saying whether it worked.
 
 ```
-pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.10/g1lab-0.1.10-py3-none-any.whl"
+pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.11/g1lab-0.1.11-py3-none-any.whl"
 python -m g1lab.export pick_01 pick_02 pick_03 --out pick --task "pick up the cube" --success mine.py
 ```
 

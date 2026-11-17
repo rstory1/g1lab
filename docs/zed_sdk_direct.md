@@ -44,8 +44,7 @@ stream as above, prints the distance straight ahead once a second, and with
 picture. It does not use `g1lab`.
 
 ```
-source ~/zed/env.sh                                  # on the lab workstation
-PY=~/MotionCapture/GEAR-SONIC/.venv_sim/bin/python   # the lab's Python with pyzed
+PY=~/zedenv/bin/python                                # your Python with pyzed (see "Get pyzed" below)
 
 $PY examples/zed_sdk.py                         # the robot's stream, 10 s
 $PY examples/zed_sdk.py --objects --seconds 30 --picture seen.jpg
@@ -73,17 +72,69 @@ camera. Two things differ from the 640 x 480 picture of `r.camera.read()`:
 
 It needs an **NVIDIA graphics card** and the **ZED SDK**. Use **version 5.x**:
 the robot's camera server runs SDK 5.0.7, and a stream is safest opened by the
-same major version. The lab workstation's SDK 5.5.1 opens it fine (checked
-2026-11-16).
+same major version. The lab workstation gets SDK 5.6.
 
-- **Your laptop, if it has an NVIDIA GPU.** Install the ZED SDK from
-  Stereolabs (it needs the matching CUDA), plug into the Robot Network
-  as in [camera_quickstart.md](camera_quickstart.md) section 1, and run your
-  program. The H.265 stream takes a few Mbit/s.
+- **Your laptop, if it has an NVIDIA GPU.** Install the ZED SDK for your
+  system from <https://www.stereolabs.com/developers/release> (pick the
+  build that matches your CUDA), plug into the Robot Network as in
+  [camera_quickstart.md](camera_quickstart.md) section 1, then get pyzed as
+  below. The H.265 stream takes a few Mbit/s.
 - **The lab workstation** (`192.168.123.222`, the RTX 5090). Log in with your
-  own account there. The SDK is already installed for the lab's programs: use
-  the lab's `.venv_sim` Python with `source ~/zed/env.sh` (the maintainers' notes
-  are in `docs/foxglove.md`, "Perception: head camera, lidar and robot model").
+  own account there. The SDK is being installed for everyone in
+  `/usr/local/zed` (November 2026). Until it is there, install it in your own
+  account as in "No admin rights" below; after that you only need pyzed in
+  your own Python.
+
+## Get pyzed
+
+pyzed is the SDK's Python package. Stereolabs' script installs it into
+whichever Python runs it, so make your own environment and run it from there
+(the same on the workstation and on a laptop):
+
+```
+python3 -m venv ~/zedenv
+~/zedenv/bin/pip install --upgrade pip numpy requests
+~/zedenv/bin/python /usr/local/zed/get_python_api.py
+~/zedenv/bin/python -c "import pyzed.sl as sl; print(sl.Camera.get_sdk_version())"
+```
+
+The last line prints the SDK version (5.6.0 on the workstation). For
+`--picture`, also `~/zedenv/bin/pip install opencv-python`. On Windows the
+script is in the SDK's install folder (`C:\Program Files (x86)\ZED SDK`).
+
+## No admin rights: the SDK in your own account
+
+Stereolabs' installer puts the SDK in `/usr/local/zed` and needs admin
+rights. Without them (the lab workstation until its install is done, or a
+computer you don't run), unpack it into your own home folder instead. This
+was checked on the lab workstation with SDK 5.6 on 2026-11-17: pyzed 5.6
+opened the robot's stream with NEURAL_LIGHT depth. It takes about 3 GB.
+
+```
+# 1. Download the build for your Ubuntu and CUDA from the release page above.
+#    On the lab workstation: Ubuntu 24, CUDA 13, TensorRT 11:
+wget -O ~/zed_sdk.run https://download.stereolabs.com/zedsdk/5.6/cu13_trt11/ubuntu24
+
+# 2. Unpack it into ~/zed without running the installer (no admin rights)
+sh ~/zed_sdk.run --nox11 --noexec --target ~/zed
+
+# 3. Tell programs where it is (add these lines to ~/.bashrc to keep them)
+export ZED_DIR=~/zed
+export LD_LIBRARY_PATH=~/zed/lib:~/zed/dependencies/ai_dependencies/lib:/usr/local/cuda/lib64
+
+# 4. pyzed: the same as "Get pyzed", but point Stereolabs' script at ~/zed
+sed "s#zed_path = \"/usr/local/zed\"#zed_path = os.environ['ZED_DIR']#" \
+    ~/zed/get_python_api.py > ~/zed/get_python_api_user.py
+python3 -m venv ~/zedenv
+~/zedenv/bin/pip install --upgrade pip numpy requests
+~/zedenv/bin/python ~/zed/get_python_api_user.py
+~/zedenv/bin/python -c "import pyzed.sl as sl; print(sl.Camera.get_sdk_version())"
+```
+
+Every new terminal needs the two `export` lines (step 3) before running your
+program. The first NEURAL depth on a computer prepares the model for a few
+minutes and looks like a hang. When the shared install is there, you can
+delete `~/zed` and rerun "Get pyzed".
 
 ## Rules
 

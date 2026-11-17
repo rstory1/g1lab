@@ -13,7 +13,7 @@ New in g1lab 0.1.9. Four things your program can now do:
 yet. Every example below runs on your laptop first:
 
 ```
-pip install "g1lab[mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.10/g1lab-0.1.10-py3-none-any.whl"
+pip install "g1lab[mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.11/g1lab-0.1.11-py3-none-any.whl"
 ```
 
 ## Before you start: the walking session

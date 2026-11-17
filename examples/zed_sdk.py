@@ -11,8 +11,8 @@ never opens the camera itself and cannot move the robot. Does not use g1lab.
     python3 zed_sdk.py --svo episode.svo2 --objects     # a recording, no robot
 
 Needs an NVIDIA graphics card and the ZED SDK 5.x with its Python package
-(pyzed). On the lab workstation: `source ~/zed/env.sh` and the lab's .venv_sim
-Python. Depth runs on YOUR card; on the workstation it shares the card with the
+(pyzed): see docs/lab/zed_sdk_direct.md, "Get pyzed" (any account, laptop or
+lab workstation: a venv plus the SDK's get_python_api.py). Depth runs on YOUR card; on the workstation it shares the card with the
 robot's controller, so keep NEURAL_LIGHT while the robot runs, and stop at once
 if the operator asks. --picture saves the left picture cut to g1lab's 640 x 480
 with the objects drawn on it (needs OpenCV).
@@ -100,8 +100,8 @@ def main():
     try:
         import pyzed.sl as sl
     except ImportError as exc:
-        sys.exit(f"cannot import pyzed ({exc}): install the ZED SDK and its Python package; on the "
-                 f"lab workstation, `source ~/zed/env.sh` and use the lab's .venv_sim Python")
+        sys.exit(f"cannot import pyzed ({exc}): install the ZED SDK, then run its get_python_api.py "
+                 f"with this Python (zed_sdk_direct.md, \"Get pyzed\")")
 
     cam = open_camera(sl, a)
     try:
