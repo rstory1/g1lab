@@ -1,13 +1,14 @@
 # Missions: skills in a row
 
 A mission is a short list of skills the robot does one after another: look for the casting, walk up
-to it, pick it up. You write it as a file or as Python; both run the same way. New in g1lab 0.1.9.
-On your laptop a whole mission runs on the mock, in a pretend room with a pretend detector
-(`g1lab.mockworld`, see "Try it"). In the lab, `go_to` and `home` steps run in the walking simulator
-(`r.services.start("walk")`). Object detection is not in this release, so in the lab `find`,
-`approach` and `pick` cannot run yet (`find` stops with `unavailable` and says so); the whole mission runs
-on the mock. Not on the real robot yet. A short version, with the
-other new features: [walk_reach_missions.md](walk_reach_missions.md).
+to it, pick it up. You write it as a file or as Python; both run the same way.
+
+**Where it runs.** On your laptop a whole mission runs on the mock, in a pretend room with a
+pretend detector (`g1lab.mockworld`, see "Try it"). In the lab, missions run in the walking
+simulator (`r.services.start("walk")`), not on the real robot yet. **There is no object detector
+in the lab yet**, so there only `go_to` and `home` steps run: `find` stops with `unavailable` and
+says so, and `approach` and `pick` need a `find` first. Walking and reaching on their own:
+[walk_reach_missions.md](walk_reach_missions.md).
 
 ## A mission file
 
@@ -28,7 +29,8 @@ Check it before anything moves, and run it:
     python -m g1lab.mission steps fetch.yaml           # every step with its defaults filled in
     python -m g1lab.mission run fetch.yaml --host 192.168.123.222 --name YOURNAME   # in the lab; on a laptop see "Try it"
 
-Reading a YAML file needs `pip install g1lab[missions]` (PyYAML). A file written as JSON works without it.
+Reading a YAML file needs the `missions` extra (PyYAML), which the README's install line has. A file
+written as JSON works without it.
 
 ## The same thing in Python
 
@@ -57,7 +59,7 @@ print(result.status, result.failed_step, result.message)
 | `place` | puts the held thing at a point in front of the robot (x forward, y left, z up, m) or at a found target | `x`, `y`, `z` or `target` |
 | `drop` | opens the hand where it is | `hand` |
 | `home` | both arms home, checked against the joint readings | `hands` (keep, open) |
-| `policy` | runs a policy the operator has approved | `name`, `seconds` |
+| `policy` | runs a policy the operator has approved; only when the operator runs the mission (from your own program it stops with `unavailable`) | `name`, `seconds` |
 
 Every skill has a `timeout`. `retries: 1` on a step tries it again after a failure that might go
 away (not found, blocked, no grasp), never after a timeout or a refusal.
@@ -68,7 +70,9 @@ The mission stops at the first step that fails. The robot holds still, the arms 
 result: `status` (`done`, `failed`, `cancelled`, `timeout`, `error`), `failed_step`, and for each step a
 `code` and a message in words: `not_found`, `lost_target`, `blocked`, `no_path`, `unreachable` (move
 closer: the arm reaches about 0.3 to 0.4 m ahead at table height, the message says how far short and whether a waist lean would help), `no_grasp`, `refused` (the robot refused a pose),
-`unavailable` (something it needs is not there, such as a detector), `precondition`
+`unavailable` (something it needs is not there, such as a detector), `no_detector` (the detector
+stopped sending), `stopped` (the walking safety layer held the robot still, or its position stopped
+coming), `policy_failed` (a `policy` step's policy did not succeed), `precondition`
 (for example `approach` before any `find`). A closed hand stays closed until your program ends, then it
 lets go.
 

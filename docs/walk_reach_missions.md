@@ -1,6 +1,6 @@
 # Walking, reaching and missions
 
-New in g1lab 0.1.9. Four things your program can now do:
+Four things your program can do:
 
 1. [Walk to a point: `r.nav.go_to()`](#1-walk-to-a-point-rnavgo_to)
 2. [Plan a reach with the arm: `g1lab.reach`](#2-plan-a-reach-with-the-arm-g1labreach)
@@ -10,11 +10,9 @@ New in g1lab 0.1.9. Four things your program can now do:
 **Where it runs today.** On your laptop with `g1lab.mock()`, and in the lab in the
 **walking simulator** session, which your program starts itself with
 `r.services.start("walk")`. Walking on the real robot is not open to programs
-yet. Every example below runs on your laptop first:
-
-```
-pip install "g1lab[mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.12/g1lab-0.1.12-py3-none-any.whl"
-```
+yet. Every example below runs on your laptop first, with g1lab installed as in
+[the guide](guide.md#install) (its install line has the `mock` and `missions`
+extras these need).
 
 ## Before you start: the walking session
 
@@ -39,7 +37,7 @@ check `pose.quality` (`"ok"` or `"degraded"`) and `pose.drift_m` (estimated erro
 programs; at 20 in of estimated error it stops coming. To try that on the laptop, use
 `g1lab.mock(nav="lab", robot_pose=True)`. `r.nav.map()` gives the map itself. You can also walk by hand with
 `c.walk(vx, vy, wz)` (forward, left, turning); each call lasts half a second, so
-call it in a loop or pass `duration=`.
+call it in a loop or pass `duration=`, and `c.stop()` stops at once.
 
 **Safety: the robot's limits always win.** Every step goes through the same
 safety layer the operator sets up, and your program cannot loosen it: at most
@@ -113,7 +111,7 @@ r.close()
   hand comes in (`side`, `top`, ...).
 - `solver.refine(plan, measured_angles, measured_waist)`: the arm never lands
   exactly where it was told, and while the robot stands the walking policy turns
-  the waist as the arm reaches (in SIM about 0.17 rad, which moves the hand 8 to 9 cm
+  the waist as the arm reaches (in the simulator about 0.17 rad, which moves the hand 8 to 9 cm
   sideways). This looks at where the hand really is, on the measured waist, and
   returns a corrected plan and how far off it was (`miss`, in m). Leave out the
   waist and the solver assumes it is straight.
@@ -128,46 +126,12 @@ plans; the robot still checks every pose, so `c.arms.move_to` can raise
 
 ## 3. Missions: skills in a row
 
-A mission is a short list of skills run one after another: look for an object,
-walk up to it, pick it up. Write it as a YAML file or in Python; both run the
-same way. The skills are `find`, `go_to`, `approach`, `pick`, `place`, `drop` and
-`home`. Example: [mission_basic.yaml](../examples/mission_basic.yaml) and
-[mission_basic.py](../examples/mission_basic.py), which runs it in a
-pretend room with a pretend detector (`g1lab.mockworld`).
-
-```yaml
-mission: fetch_cup
-steps:
-  - find: {label: cup, scan: true}          # turn in place until it is seen
-  - approach: {target: cup, standoff: 0.3}  # walk to 0.3 m from it, facing it
-  - pick: {target: cup, hand: right}        # reach, close the hand, lift
-  - home: {hands: keep}                     # arms home, still holding
-```
-
-```python
-import g1lab
-from g1lab.mission import Mission
-from g1lab.mockworld import MockWorld
-
-r = g1lab.mock(name="YOURNAME", settle=0.3)
-MockWorld(r, objects={"cup": (1.5, 0.4, 0.1)})   # a pretend cup and floor
-m = (Mission("fetch_cup", timeout=120).find("cup", scan=True)
-     .approach("cup", standoff=0.3).pick("cup", hand="right", verify="none").home(hands="keep"))
-result = m.run(r)
-print(result.status, result.failed_step, result.message)
-r.close()
-```
-
-`python -m g1lab.mission check mission_basic.yaml` checks a file before anything
-moves (YAML needs the `missions` extra). The mission stops at the first step that
-fails: the robot stops, the arms go home, and `result.status` is `failed` with a
-`code` in words, such as `not_found`, `no_path`, `unreachable` (stand closer) or
-`refused`. Every skill and every code: [Missions: skills in a row](missions.md).
-
-**In the lab today:** object detection is not in this release, so in the walking
-simulator a mission can use `go_to` and `home` steps only; a `find` step fails with
-`unavailable` and says so. The whole find, approach, pick mission runs on your laptop
-on the mock, with `MockWorld` as above.
+A mission is a short list of skills (`find`, `go_to`, `approach`, `pick`, `place`,
+`drop`, `home`) run one after another, from a YAML file or from Python.
+[mission_basic.py](../examples/mission_basic.py) runs
+[mission_basic.yaml](../examples/mission_basic.yaml) on the mock, in a pretend
+room with a pretend detector. Every skill, every failure code and where missions run:
+[Missions: skills in a row](missions.md).
 
 ## 4. Carry something while walking
 
@@ -199,8 +163,5 @@ not while walking: the robot walks less steadily with its arms out.
 - Walking, reaching while walking and missions on the **real robot**. When they
   open, the operator decides when, and a spotter with the emergency stop stands
   by the robot; the operator or spotter can stop your program at any time.
-- A detector your program can use in the lab, so `find`, `approach` and `pick`
-  run on the laptop only for now.
 - Walking right up to a table: `go_to` keeps about 18 in from furniture.
 - The left hand for grasping.
-- Starting a mission from the lab's launcher: you run it from your own program.

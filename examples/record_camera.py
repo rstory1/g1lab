@@ -72,7 +72,10 @@ def main():
                     video = cv2.VideoWriter(os.path.join(a.out, "video.mp4"),
                                             cv2.VideoWriter_fourcc(*"mp4v"), min(a.fps, 15.0), (w, h))
                 video.write(frame)
-            print(f"\r{n} pictures", end="", flush=True)
+            if sys.stdout.isatty():
+                print(f"\r{n} pictures", end="", flush=True)    # one line, counting up
+            elif n % max(1, round(a.fps)) == 0:
+                print(f"{n} pictures", flush=True)               # into a file: a line a second
     if video is not None:
         video.release()
     r.close()

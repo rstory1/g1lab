@@ -4,7 +4,7 @@
 
 """Run mission_basic.yaml (find a cup, walk up to it, pick it up) on a laptop.
 
-    pip install "g1lab[mock,missions]"     # missions: reads YAML files
+    (install g1lab with `missions` in the extras: it reads the YAML file)
     python3 mission_basic.py               # the YAML file
     python3 mission_basic.py --python      # the same mission, written in Python
 

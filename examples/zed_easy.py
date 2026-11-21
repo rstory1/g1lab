@@ -8,7 +8,8 @@ with nothing else to install. Needs no session; the robot does not move.
     python3 zed_easy.py --host 192.168.123.222 --name YOURNAME
     python3 zed_easy.py --host 192.168.123.222 --name YOURNAME --seconds 30 --picture seen.jpg
 
-Starts the zed service on the workstation (a few seconds), then once a second
+Starts the zed service on the robot computer (usually a few seconds, up to a minute
+the first time), then once a second
 prints what the ZED sees. --picture saves the camera picture with the boxes,
 the skeletons and a few distances drawn on it (needs Pillow: g1lab's `camera`
 option). The service stops by itself when nobody uses it.

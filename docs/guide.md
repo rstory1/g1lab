@@ -1,40 +1,33 @@
 # g1lab: drive and read the G1 from Python
 
 `g1lab` is a small Python package for your own robot programs. It does the
-fiddly parts of [the plain messages](joints_and_messages.md) for you:
-
-- **It keeps sending.** Inside `with r.control() as c:` it sends your pose
-  about 30 times a second, so the arms don't go down when your program stops
-  to think, print or draw a plot.
-- **It never mixes up the answers.** You never see "Operation cannot be
-  accomplished in current state".
-- **It tells you what went wrong by name:** your turn hasn't come, the pose
-  was refused, the session is over.
-- **It reads the sensors:** the joints, the body's tilt, the hands, the
-  temperatures, the camera and the 3-D points.
+fiddly parts of [the plain messages](joints_and_messages.md) for you. Inside
+`with r.control() as c:` it sends your pose about 30 times a second, so the arms
+do not go down when your program stops to think, print or draw a plot. Each
+problem comes back as its own named error: see
+[When something goes wrong](#when-something-goes-wrong).
 
 **Right now this runs on the simulated robot.** Your program does not change
 when it moves to the real one.
 
 ## Install
 
-Anywhere with internet (the Robot Network has none):
+Python 3.8 or newer, anywhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.12/g1lab-0.1.12-py3-none-any.whl"
+pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.13/g1lab-0.1.13-py3-none-any.whl"
 ```
 
-That brings `pyzmq`, `msgpack` and `numpy`; `camera` adds `pillow` (camera
-pictures as arrays) and `mock` adds `mujoco` (the laptop robot). To show a
-live camera window or write video files you also need OpenCV (about 190 MB);
-to include it:
+That brings `pyzmq`, `msgpack` and `numpy`. Each name in the brackets is an extra;
+leave out what you do not need, or add one by putting its name in the brackets:
 
-```
-pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.12/g1lab-0.1.12-py3-none-any.whl"
-```
-
-Without it, pictures, arrays and datasets of pictures still work. The
-examples and the camera quickstart are at https://github.com/rstory1/g1lab.
+| Extra | Adds | For |
+|---|---|---|
+| `camera` | Pillow | camera pictures as arrays (`r.camera.read()`), the mock's drawn camera |
+| `mock` | MuJoCo | `g1lab.mock()`, the robot on your laptop |
+| `missions` | PyYAML | mission files written in YAML |
+| `video` | OpenCV, about 190 MB | a live camera window and video files; pictures and arrays work without it |
+| `export` | pyarrow, OpenCV | `python -m g1lab.export`, recordings to a training set |
 
 In the lab, the same file is on the **lab board**: open
 `http://192.168.123.222:8090/` in a browser on the Robot Network, which also
@@ -42,10 +35,8 @@ shows who has the robot, who is next, and what the robot's camera sees.
 There, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.12-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.13-py3-none-any.whl
 ```
-
-It needs Python 3.8 or newer.
 
 ### Check you are ready
 
@@ -101,10 +92,28 @@ Reading works any time, without a session and without waiting your turn.
 | `r.depth.read()` | `(t, xyz, rgb)`: 3-D points in metres and their colours |
 | `r.depth.image()` | `(t, depth)`: a distance in metres for every pixel of the camera picture, `NaN` where it could not measure. **Needs `r.services.start("zed")`**: see [the camera quickstart](camera_quickstart.md#7-depth-for-every-pixel-and-the-zeds-objects-bodies-and-pose) |
 | `r.zed.objects()`, `r.zed.bodies()`, `r.zed.pose()` | what the ZED SDK works out from the camera: the things and people it sees (boxes and skeletons, in 3-D and on the picture) and where the camera is. Also needs `r.services.start("zed")` |
-| `r.on("joints", f)` | calls `f(js)` for every new reading, in the background. Also `"imu"`, `"hands.right"`, `"hands.left"`, `"temps"`, `"camera"`, `"depth"`, `"depth.image"`, `"lidar"`, `"head_imu"`, `"tf"`, `"zed.objects"`, `"zed.bodies"`, `"zed.pose"`, `"session"`. It returns a function: call it to stop |
+| `r.on("joints", f)` | calls `f(js)` for every new reading, in the background. Also `"imu"`, `"hands.right"`, `"hands.left"`, `"temps"`, `"camera"`, `"depth"`, `"depth.image"`, `"lidar"`, `"head_imu"`, `"tf"`, `"zed.objects"`, `"zed.bodies"`, `"zed.pose"`, `"session"`, `"health"`, and in a walking session `"pose"` and `"odom"`. It returns a function: call it to stop |
+| `r.nav.pose()`, `r.nav.odom()` | in a walking session: where the robot is on the map, and where its legs count it is (starts at 0, 0, 0 and drifts). See [walk_reach_missions.md](walk_reach_missions.md) |
 
 A read gives the newest reading. If a sensor has sent nothing for a while,
 the read waits up to 2 seconds and then raises `NoData`.
+
+### The lidar
+
+The walking mock (`g1lab.mock(nav="lab")`) and the walking simulator answer
+`r.lidar.read()` with a flat `Scan`: one turn of 360 beams in the body's frame
+(0 = ahead, +90° = left), `inf` where nothing came back; `scan.points()` gives the
+points. The real robot's 3-D lidar on its head is not switched on yet. Once it is,
+these calls read it, with no session, like the camera:
+
+| Call | What you get |
+|---|---|
+| `r.lidar.read()` | a `Cloud`: `xyz` (up to 4,000 points, metres, in the lidar's frame `livox_frame`), `intensity` (0 to 255), `t`. 10 times a second. `cloud.points()` gives the `xyz` |
+| `r.lidar.imu()` | the lidar's own motion sensor: `gyro` (rad/s) and `acc` (m/s², gravity included), several samples per reading with their times in `stamp`. The gyro reads about 0.06 rad/s (3°/s) when the robot is still: average it for a second or two at rest and subtract that before adding up turns |
+| `r.state.tf()` | where each part of the robot is relative to the next (`transforms`: `parent`, `child`, `xyz`, `quat` as w, x, y, z), for turning lidar points into the body's frame |
+
+The points are thinned to about one per 4 in cube, so a reading is light
+enough for Wi-Fi. Code that only uses `.points()` works on both.
 
 ## Moving the robot
 
@@ -119,6 +128,7 @@ Everything that moves the robot goes inside `with r.control() as c:`.
 | `c.hands.open("right")` | open |
 | `c.hands.set("left", q)` | your own 7 finger angles |
 | `c.status` | the robot's last answer: `phase`, `clamped`, `held`, `resting`, `refused` |
+| `c.walk(vx, vy, wz)`, `c.stop()` | in a walking session only: walk for half a second (forward, left, turning), or stop now. See [walk_reach_missions.md](walk_reach_missions.md) |
 
 `r.control()` first waits for your turn. It prints why it is waiting (*ben
 has the robot; you are 1st in line*) and goes on by itself when your turn
@@ -167,8 +177,9 @@ From a terminal: `python -m g1lab.record --host 192.168.123.222 --seconds 60
 | `run.play(topics, start, end)` | `(t, topic, value)` across sensors, in time order |
 | `run.stamps(topic)` | all of a sensor's times, as an array |
 | `run.topics`, `run.t0`, `run.t1`, `run.duration`, `run.summary()` | what the folder holds |
+| `run.backend` | `"robot"` or `"sim"`: what it was recorded from (`None` if the recording does not say) |
 
-A camera value is the picture, a depth value is `(xyz, rgb)`, a `zed.depth` value is the depth image, and every other
+A camera value is the picture, a depth value is `(xyz, rgb)`, a `depth.image` value is the depth image (`run.topics` and `run.play()` name it `zed.depth`), and every other
 value is the same dictionary the stream carries. Pass `raw=True` to get the
 stored message instead, untouched.
 
@@ -181,8 +192,9 @@ pictures are stamped about 50 ms before they arrived, when the robot took them.
 One recording folder is one demo. `python -m g1lab.export` turns a set of them
 into a LeRobot v2.1 dataset, with a label for each demo saying whether it worked.
 
+It needs the `export` extra ([Install](#install)):
+
 ```
-pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.12/g1lab-0.1.12-py3-none-any.whl"
 python -m g1lab.export pick_01 pick_02 pick_03 --out pick --task "pick up the cube" --success mine.py
 ```
 
@@ -191,7 +203,7 @@ python -m g1lab.export pick_01 pick_02 pick_03 --out pick --task "pick up the cu
 ```python
 def success(rec):
     t, joints = rec.at("joints", rec.t1)
-    return joints.q[15] < -0.5
+    return joints["L_sh_pitch"] < -0.5
 ```
 
 `--only-success` leaves the failed demos out. `--label true` or `--label false`
@@ -200,12 +212,11 @@ gives them all the same label. Without either, the label is null.
 Each frame's state is the 29 body joints, both hands and projected gravity (46
 numbers). Its action is the body joints one frame later and both hands' commanded
 joints (43 numbers). The picture is the head camera at 15 frames a second, so
-record with the camera on. An export needs a new output folder. A joint telemetry
-gap rejects the demo: split or re-record it instead of joining states across a gap.
+record with the camera on. An export needs a new output folder. A gap in the joint
+readings rejects the demo: split or re-record it instead of joining states across a gap.
 All kept demos must have the same camera coverage and image dimensions. You can
 export camera-free demos together, but they form a state-only dataset. Video and
-state timestamps use the same requested frame rate (`--fps`, default 15). From the 0.1.12 wheel. This
-data has no `motion_token`, so GR00T N1.7's `unitree_g1_sonic` head cannot train on it.
+state timestamps use the same requested frame rate (`--fps`, default 15).
 
 ## Policies
 
@@ -249,7 +260,7 @@ r.services.start("sim", wait=120)    # a simulated robot for your program; tens 
 with r.control() as c:               # then use it as usual
     ...
 r.services.start("llm", wait=120)    # the language model on the robot computer
-r.services.start("zed", wait=180)    # the ZED's depth image, objects, bodies and pose (r.zed)
+r.services.start("zed", wait=180)    # the ZED's depth image, objects, bodies and pose (r.zed); usually a few seconds
 print(r.services.status("llm"))      # ServiceInfo(name='llm', state='running', programs=1, ...)
 r.services.stop("llm")               # you are done with it
 print(r.services.status())           # every service: what it is, and whether it runs
@@ -260,25 +271,22 @@ print(r.services.status())           # every service: what it is, and whether it
 - **walk** is the same kind of session with the simulated robot walking: see
   [walk_reach_missions.md](walk_reach_missions.md). It and `sim` share
   one simulator, so only one of the two runs.
-- **llm** is the language model (it answers on port 8080 of the robot
-  computer, for programs running there). It needs about 22.5 GB of the
+- **llm** is the language model. It needs about 22.5 GB of the
   graphics card, and the robot's controller must always keep 2 GB, so it is
   refused when the card is too full (the reason gives the numbers), and
   while the real robot is running, since it would slow the robot's controller.
 - **zed** is the ZED SDK's depth image, objects, bodies and pose (`r.depth.image()`,
   `r.zed.objects()`, `r.zed.bodies()`, `r.zed.pose()`). It takes about 3 GB of the
-  graphics card (a guess, not measured yet) and is refused, with the numbers, when
+  graphics card and is refused, with the numbers, when
   the card cannot also keep the robot's controller its 2 GB. Unlike the model it
   is allowed while the real robot runs, but it shares the card with the controller,
-  so stop it when you are done. Built and tested with fake data, not yet run on
-  the real camera. See [the camera quickstart](camera_quickstart.md#7-depth-for-every-pixel-and-the-zeds-objects-bodies-and-pose).
+  so stop it when you are done. See [the camera quickstart](camera_quickstart.md#7-depth-for-every-pixel-and-the-zeds-objects-bodies-and-pose).
 - **deploy, session** move the robot. Only the
   operator starts them, from the launcher; `start()` raises
   `g1lab.ServiceRefused` saying so.
 - **vision, speech, recorder** are planned: `start()` says "not available yet".
   Recording already works from your own program; see
-  [Recording a dataset](#recording-a-dataset). The `recorder` service would run
-  it on the robot computer instead.
+  [Recording a dataset](#recording-a-dataset).
 
 `start()` holds a lease for your program, and g1lab renews it every minute
 while your program runs. Ten minutes after the last program using a service
@@ -351,7 +359,7 @@ program that acts on the answer, give it one:
 No robot, no network: `r = g1lab.mock(name="YOURNAME")` answers every call
 `connect()` does, and runs the robot's own safety code, so a pose the robot
 refuses is refused here too, with the same words. Every example takes
-`--host mock`. Needs MuJoCo (`pip install mujoco`).
+`--host mock`. Needs the `mock` extra ([Install](#install)).
 
 ```python
 r = g1lab.mock(name="YOURNAME", view=True)  # view: a 3-D window with the robot's pose
@@ -363,7 +371,7 @@ What it is not: the legs stand still, nothing balances or heats up, the hand
 pads read zero, and the camera plays a short recorded clip (or nothing).
 `g1lab.mock(camera="render")` draws the head camera's view instead: the
 mock robot's own arms and a red ball in front of the right shoulder
-(`ball=(x, y, z)` moves it, `ball=None` removes it; needs Pillow). The
+(`ball=(x, y, z)` moves it, `ball=None` removes it; needs the `camera` extra). The
 simulated camera sits where the robot's camera sits, with the same lens, so
 pixel maths that works here works on the robot.
 Joints follow the command about 0.1 s behind, as on the robot. The session
@@ -372,53 +380,23 @@ after `minutes=` (45) the arms go home and it ends. `say=print` shows the
 robot computer's own messages ("pose held: ...", "arm resting"). On a Mac,
 run a program with `view=True` using `mjpython` instead of `python`.
 
-### The robot's lidar (not open yet)
-
-The real robot has a 3-D lidar on its head. Once it is switched on in the
-lab, these calls read it, with no session, like the camera:
-
-| Call | What you get |
-|---|---|
-| `r.lidar.read()` | a `Cloud`: `xyz` (up to 4,000 points, metres, in the lidar's frame `livox_frame`), `intensity` (0 to 255), `t`. 10 times a second. `cloud.points()` gives the `xyz` |
-| `r.lidar.imu()` | the lidar's own motion sensor: `gyro` (rad/s) and `acc` (m/s², gravity included), several samples per reading with their times in `stamp`. The gyro reads about 0.06 rad/s (3°/s) when the robot is still: average it for a second or two at rest and subtract that before adding up turns |
-| `r.state.tf()` | where each part of the robot is relative to the next (`transforms`: `parent`, `child`, `xyz`, `quat` as w, x, y, z), for turning lidar points into the body's frame |
-
-The points are thinned to about one per 4 in cube, so a reading is light
-enough for Wi-Fi.
+`g1lab.mock(nav="lab")` (an 8 x 6 m room) or `nav="hall"` (a 20 m corridor with doors)
+makes the mock a walking session: see [walk_reach_missions.md](walk_reach_missions.md).
 
 ## Example programs
 
-In [examples/](../examples/) (run them with `--host` and `--name`):
-
-| File | What it does |
-|---|---|
-| `info.py` | checks you can reach the robot; prints the joints, limits and home |
-| `wave.py` | waves the right arm and opens and closes the hand; change `pose_at` for your own motion |
-| `raise_arm.py` | raises the right arm, holds it, lets go |
-| `sensors.py` | reads the joints, tilt, hand pads, temperatures and one camera picture |
-| `record_dataset.py` | records all the sensors to a folder, then lines each lidar reading up with the joints at that moment |
-| `record_camera.py` | records the head camera to numbered JPEGs (and an MP4 with `--video`) for a dataset; see [lab/camera_quickstart.md](camera_quickstart.md) |
-| `zed_easy.py` | the ZED's depth image, objects, people and pose the easy way, through `g1lab` (starts the zed service); `--picture` draws them on the camera picture; see [lab/camera_quickstart.md](camera_quickstart.md) section 7 |
-| `zed_sdk.py` | the ZED SDK yourself: opens the robot's camera stream with pyzed (no `g1lab`), your own depth, `--objects` for detection, `--svo` for a recording; see [lab/zed_sdk_direct.md](zed_sdk_direct.md) |
-| `go_to_basic.py` | walks to a point 1 m ahead with `r.nav.go_to()` and prints the result and reason (walking mock, or the walking simulator) |
-| `reach_basic.py` | plans a right-hand reach to a point in front (pre-grasp, grasp, or `Unreachable`); `--move` moves the arm there and corrects with `refine()` |
-| `mission_basic.yaml`, `mission_basic.py` | a find, approach, pick mission, as a file and in Python, run on the mock in a pretend room (`g1lab.mockworld`) |
-| `carry_while_walking.py` | holds the right arm out and walks 1 m (`mock(nav="lab", arms=True)`, or the walking simulator) |
-
-The last four are explained, with what each result means, in
-[lab/walk_reach_missions.md](walk_reach_missions.md).
+Small programs to start from are in [examples/](../examples/). Each says at its top what it
+does and how to run it; all but `zed_sdk.py` run on a laptop with `--host mock`.
+[walk_reach_missions.md](walk_reach_missions.md) explains the walking, reach and
+mission ones.
 
 ## Missions
 
-A list of skills (find, go_to, approach, pick, place, drop, home) that runs as one program,
-from a YAML file or from Python. From the 0.1.9 wheel (`pip install g1lab[missions]` for YAML).
-See [missions.md](missions.md).
+Skills in a row (find, go_to, approach, pick, place, drop, home), from a YAML file or
+from Python: [missions.md](missions.md).
 
 ## Modules
 
-[notebooks/](../notebooks/) holds worked notebooks that show how to use each
-feature. All their code runs from top to bottom, on the mock first:
-Joints and frames, Trajectories, Inverse kinematics, Perception (find the red
-ball, point at it), Camera and depth, Recording a dataset, Services and the
-language model, Refusals and errors. Its
-[README](../notebooks/README.md) says what to install.
+The modules, worked notebooks that each show how to use one feature and run on the
+mock first, are in [notebooks/](../notebooks/README.md); that page lists
+them and says what to install.

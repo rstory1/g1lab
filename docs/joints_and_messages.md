@@ -136,7 +136,8 @@ the two hands almost touching.
 
 **The right middle finger is stuck.** Its base joint is broken on this robot and
 is held at 1.56 whatever you send. The right middle finger always looks partly
-bent, and that is expected.
+bent, and that is expected. Its range in `info` is that one angle (89.4 .. 89.4 deg
+from the example `info.py`, which marks it fixed).
 
 ## What the robot does to keep everyone safe
 

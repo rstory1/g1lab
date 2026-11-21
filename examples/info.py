@@ -35,8 +35,9 @@ def main():
     for g, names in info.groups.items():
         print(f"\n{g}")
         for name, (lo, hi), h in zip(names, info.limits[g], info.home[g]):
+            fixed = "   (fixed: this joint does not move)" if lo == hi else ""
             print(f"  {name:15s} {math.degrees(lo):7.1f} .. {math.degrees(hi):6.1f} deg"
-                  f"   home {math.degrees(h):6.1f}")
+                  f"   home {math.degrees(h):6.1f}{fixed}")
     r.close()
 
 

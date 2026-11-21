@@ -28,14 +28,14 @@ program will get `NoData` too.
 Python 3.8 or newer, somewhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.12/g1lab-0.1.12-py3-none-any.whl"
+pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.13/g1lab-0.1.13-py3-none-any.whl"
 ```
 
 The live window in section 4 also needs OpenCV (about 190 MB): use
 `g1lab[camera,video]` in that line.
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.12-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.13-py3-none-any.whl`
 
 Then, on the Robot Network, `python -m g1lab.check --name YOURNAME`: one line per
 check with the fix, from your address to whether the camera's stream (port 5601)
@@ -134,14 +134,14 @@ np.savez("depth.npz", t=t, xyz=xyz, rgb=rgb)           # keep it for later
 Section 6 gives you 3-D points. The ZED's own software can also give you
 a **depth image** (a distance for every pixel of the picture) and can find
 **things and people** in the picture and track **where the camera is**. These
-take the workstation's graphics card, so they are **off until you ask**:
+take the robot computer's graphics card, so they are **off until you ask**:
 
 ```python
 import numpy as np
 import g1lab
 
 r = g1lab.connect("192.168.123.222", name="YOURNAME")
-r.services.start("zed", wait=180)           # about a minute the first time
+r.services.start("zed", wait=180)           # usually a few seconds, up to a minute the first time
 
 t, depth = r.depth.image(timeout=60)        # float32, 480 x 640, meters; NaN where unmeasured
                                             # (the first one comes a few seconds after "running")
@@ -177,7 +177,7 @@ full `start` says so with the numbers.
 
 - **The depth image lines up with the picture, pixel for pixel.** Both are
   640 x 480 and use the same lens numbers (focal length 352.1, center
-  325.3, 234.6, as in the section above), so `depth[v, u]` is the distance at
+  325.3, 234.6, as in [Which pixel is a 3-D point](#which-pixel-is-a-3-d-point) below), so `depth[v, u]` is the distance at
   `img[v, u]`. A pixel `(u, v)` at distance `d` is the point
   `x = d`, `y = d * (325.3 - u) / 352.1`, `z = d * (234.6 - v) / 352.1`
   (forward, left, up). Note that `d` is the distance straight out from the camera, not the
@@ -209,7 +209,6 @@ full `start` says so with the numbers.
   `r.on("zed.bodies", f)` or `r.on("zed.pose", f)`.
 - With no data, each call raises `NoData` and says to start the service.
   `g1lab.mock()` has none of this: it raises `NoData` too.
-- Checked on the robot on 2026-11-16. Tell the operator if a number looks wrong.
 
 **Want the ZED SDK itself?** If you would rather call the ZED's own API (its
 settings, its other detectors, your own depth mode), open the camera's stream
@@ -226,8 +225,8 @@ yourself: [zed_sdk_direct.md](zed_sdk_direct.md).
   in order or measure time between them, not as the time of day.
 - **Both eyes at full size** are only for computing depth your own way. They
   come from the ZED SDK stream at `192.168.123.164:30000`, which only the ZED
-  SDK can open, and the SDK needs an NVIDIA graphics card (the lab
-  workstation has one; most laptops do not). Section 7 uses it for you; to use it
+  SDK can open, and the SDK needs an NVIDIA graphics card (the robot
+  computer has one; most laptops do not). Section 7 uses it for you; to use it
   yourself see [zed_sdk_direct.md](zed_sdk_direct.md).
 
 ## Which pixel is a 3-D point
@@ -271,7 +270,7 @@ draws a simulated camera view with a red ball instead.
 | The browser cannot open the lab board | Your laptop is not on the Robot Network: see section 1 |
 | `NoData` after 2 seconds | The camera is not sending; the lab board says "No picture from the camera" |
 | `NoData` from `r.depth.image()` or `r.zed...` | The zed service is not running: `r.services.start("zed")` |
-| `NoData` "in a SIM session", or `ServiceRefused` "a SIM session is running" | The ZED's data comes from the real camera only; in SIM use `r.camera.read()` |
-| `ServiceRefused` from `start("zed")` | The graphics card is too full right now; the message gives the numbers. Try again later or ask the operator |
-| `ModuleNotFoundError: PIL` | `pip install pillow` (needed for `camera.read()`) |
+| `NoData` or `ServiceRefused` from the zed calls while a simulator session runs | The ZED's data comes from the real camera only; in the simulator use `r.camera.read()` |
+| `ServiceRefused` from `start("zed")` | The graphics card is too full right now; the message gives the numbers. Try again later |
+| `ModuleNotFoundError: PIL` | Add `camera` to the extras in the install line (section 2): `camera.read()` needs it |
 | Colors look wrong in OpenCV | Convert RGB to BGR, as in section 4 |
