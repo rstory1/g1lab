@@ -39,7 +39,8 @@ if a.move:
         c.hands.open("right")
         c.arms.move_to(right=plan.pre, duration=2.0)    # first the pre-grasp, then in
         c.arms.move_to(right=plan.grasp, duration=1.5)
-        plan, miss = solver.refine(plan, r.state.joints().arm("right"))  # correct from the real angles
+        js = r.state.joints()                           # correct from the real angles, the waist's too
+        plan, miss = solver.refine(plan, js.arm("right"), [js["waist_yaw"], js["waist_roll"], js["waist_pitch"]])
         print(f"the hand was {miss * 100:.1f} cm off; corrected")
         c.arms.move_to(right=plan.grasp, duration=0.5)
         c.arms.move_to(right=plan.pre, duration=1.5)    # back out the way it came

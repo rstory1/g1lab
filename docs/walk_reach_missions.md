@@ -13,7 +13,7 @@ New in g1lab 0.1.9. Four things your program can now do:
 yet. Every example below runs on your laptop first:
 
 ```
-pip install "g1lab[mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.11/g1lab-0.1.11-py3-none-any.whl"
+pip install "g1lab[mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.12/g1lab-0.1.12-py3-none-any.whl"
 ```
 
 ## Before you start: the walking session
@@ -34,7 +34,10 @@ r.close()
 
 `r.nav.pose()` gives the robot's place on the map: `x`, `y` in meters and `yaw`
 (which way it faces) in radians, 0 along the map's x axis and counterclockwise
-positive. `r.nav.map()` gives the map itself. You can also walk by hand with
+positive. On the robot the pose is a guess built from its steps: it slowly goes wrong, so
+check `pose.quality` (`"ok"` or `"degraded"`) and `pose.drift_m` (estimated error, meters) in long
+programs; at 20 in of estimated error it stops coming. To try that on the laptop, use
+`g1lab.mock(nav="lab", robot_pose=True)`. `r.nav.map()` gives the map itself. You can also walk by hand with
 `c.walk(vx, vy, wz)` (forward, left, turning); each call lasts half a second, so
 call it in a loop or pass `duration=`.
 
@@ -99,16 +102,21 @@ else:
     with r.control() as c:
         c.arms.move_to(right=plan.pre, duration=2.0)
         c.arms.move_to(right=plan.grasp, duration=1.5)
-        plan, miss = solver.refine(plan, r.state.joints().arm("right"))
+        js = r.state.joints()
+        waist = [js["waist_yaw"], js["waist_roll"], js["waist_pitch"]]
+        plan, miss = solver.refine(plan, js.arm("right"), waist)
         c.arms.move_to(right=plan.grasp, duration=0.5)
 r.close()
 ```
 
 - `plan.pre`, `plan.grasp`: the two arm poses. `plan.approach_name` says how the
   hand comes in (`side`, `top`, ...).
-- `solver.refine(plan, measured_angles)`: the arm never lands exactly where it was
-  told. This looks at where the hand really is and returns a corrected plan and
-  how far off it was (`miss`, in m).
+- `solver.refine(plan, measured_angles, measured_waist)`: the arm never lands
+  exactly where it was told, and while the robot stands the walking policy turns
+  the waist as the arm reaches (in SIM about 0.17 rad, which moves the hand 8 to 9 cm
+  sideways). This looks at where the hand really is, on the measured waist, and
+  returns a corrected plan and how far off it was (`miss`, in m). Leave out the
+  waist and the solver assumes it is straight.
 - `Unreachable`: no arm pose gets there. The message says why: too far from the
   shoulder ("get closer"), or how short the hand comes and which joints are at
   their stops. The arm reaches only about 0.3 to 0.4 m (12 to 16 in) ahead of

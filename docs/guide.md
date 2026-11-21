@@ -21,7 +21,7 @@ when it moves to the real one.
 Anywhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.11/g1lab-0.1.11-py3-none-any.whl"
+pip install "g1lab[camera,mock] @ https://github.com/rstory1/g1lab/releases/download/v0.1.12/g1lab-0.1.12-py3-none-any.whl"
 ```
 
 That brings `pyzmq`, `msgpack` and `numpy`; `camera` adds `pillow` (camera
@@ -30,7 +30,7 @@ live camera window or write video files you also need OpenCV (about 190 MB);
 to include it:
 
 ```
-pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.11/g1lab-0.1.11-py3-none-any.whl"
+pip install "g1lab[camera,mock,video] @ https://github.com/rstory1/g1lab/releases/download/v0.1.12/g1lab-0.1.12-py3-none-any.whl"
 ```
 
 Without it, pictures, arrays and datasets of pictures still work. The
@@ -42,7 +42,7 @@ shows who has the robot, who is next, and what the robot's camera sees.
 There, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.11-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.12-py3-none-any.whl
 ```
 
 It needs Python 3.8 or newer.
@@ -144,7 +144,8 @@ recording lands on that computer.
 ```python
 import g1lab
 
-run = g1lab.Recorder("192.168.123.222", "hallway").run(seconds=30)   # or "mock"
+run = g1lab.Recorder("192.168.123.222", "hallway").run(seconds=30)
+# on a laptop: g1lab.Recorder(g1lab.mock(camera="render"), "hallway")
 print(run)                                     # what it holds, per sensor
 for t, lidar in run.read("lidar"):
     joints = run.at("joints", t, max_age=0.1)  # (time, joints) at that moment
@@ -181,7 +182,7 @@ One recording folder is one demo. `python -m g1lab.export` turns a set of them
 into a LeRobot v2.1 dataset, with a label for each demo saying whether it worked.
 
 ```
-pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.11/g1lab-0.1.11-py3-none-any.whl"
+pip install "g1lab[export] @ https://github.com/rstory1/g1lab/releases/download/v0.1.12/g1lab-0.1.12-py3-none-any.whl"
 python -m g1lab.export pick_01 pick_02 pick_03 --out pick --task "pick up the cube" --success mine.py
 ```
 
@@ -199,7 +200,11 @@ gives them all the same label. Without either, the label is null.
 Each frame's state is the 29 body joints, both hands and projected gravity (46
 numbers). Its action is the body joints one frame later and both hands' commanded
 joints (43 numbers). The picture is the head camera at 15 frames a second, so
-record with the camera on. The tool says so when a demo has none. This
+record with the camera on. An export needs a new output folder. A joint telemetry
+gap rejects the demo: split or re-record it instead of joining states across a gap.
+All kept demos must have the same camera coverage and image dimensions. You can
+export camera-free demos together, but they form a state-only dataset. Video and
+state timestamps use the same requested frame rate (`--fps`, default 15). From the 0.1.12 wheel. This
 data has no `motion_token`, so GR00T N1.7's `unitree_g1_sonic` head cannot train on it.
 
 ## Policies

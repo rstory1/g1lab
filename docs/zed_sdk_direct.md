@@ -72,7 +72,8 @@ camera. Two things differ from the 640 x 480 picture of `r.camera.read()`:
 
 It needs an **NVIDIA graphics card** and the **ZED SDK**. Use **version 5.x**:
 the robot's camera server runs SDK 5.0.7, and a stream is safest opened by the
-same major version. The lab workstation gets SDK 5.6.
+same major version. SDK 5.6 opens it (checked 2026-11-21: depth, objects,
+bodies and tracking).
 
 - **Your laptop, if it has an NVIDIA GPU.** Install the ZED SDK for your
   system from <https://www.stereolabs.com/developers/release> (pick the
@@ -80,10 +81,9 @@ same major version. The lab workstation gets SDK 5.6.
   [camera_quickstart.md](camera_quickstart.md) section 1, then get pyzed as
   below. The H.265 stream takes a few Mbit/s.
 - **The lab workstation** (`192.168.123.222`, the RTX 5090). Log in with your
-  own account there. The SDK is being installed for everyone in
-  `/usr/local/zed` (November 2026). Until it is there, install it in your own
-  account as in "No admin rights" below; after that you only need pyzed in
-  your own Python.
+  own account there. SDK 5.6 is installed for everyone in `/usr/local/zed`, so
+  you only need pyzed in your own Python (below). Nothing else to set: no
+  `export` lines.
 
 ## Get pyzed
 
@@ -102,11 +102,16 @@ The last line prints the SDK version (5.6.0 on the workstation). For
 `--picture`, also `~/zedenv/bin/pip install opencv-python`. On Windows the
 script is in the SDK's install folder (`C:\Program Files (x86)\ZED SDK`).
 
+pyzed is built for one SDK version. When the SDK on a computer changes, a pyzed
+installed before stops importing (`undefined symbol`): run the
+`get_python_api.py` line again with the same Python.
+
 ## No admin rights: the SDK in your own account
 
 Stereolabs' installer puts the SDK in `/usr/local/zed` and needs admin
-rights. Without them (the lab workstation until its install is done, or a
-computer you don't run), unpack it into your own home folder instead. This
+rights. Without them (a computer you don't run), unpack it into your own
+home folder instead. Not on the lab workstation: it has the shared install,
+and a second SDK in `~/zed` only gets in the way. This
 was checked on the lab workstation with SDK 5.6 on 2026-11-17: pyzed 5.6
 opened the robot's stream with NEURAL_LIGHT depth. It takes about 3 GB.
 
@@ -133,8 +138,9 @@ python3 -m venv ~/zedenv
 
 Every new terminal needs the two `export` lines (step 3) before running your
 program. The first NEURAL depth on a computer prepares the model for a few
-minutes and looks like a hang. When the shared install is there, you can
-delete `~/zed` and rerun "Get pyzed".
+minutes and looks like a hang. If that computer later gets the SDK in
+`/usr/local/zed`, delete `~/zed`, drop the two `export` lines and rerun
+"Get pyzed".
 
 ## Rules
 
@@ -167,6 +173,8 @@ and no stream: use `init.set_from_svo_file("episode.svo2")` instead of
 | What you see | What it means |
 |---|---|
 | `open` fails with a connection error | The robot or its camera server is off, or you are not on the Robot Network. Open `http://192.168.123.222:8090/`: if the board shows no picture, the camera is down |
+| `import pyzed` fails with `undefined symbol` | Your pyzed was built for another SDK version (the workstation's SDK changed on 2026-11-18). Rerun the `get_python_api.py` line in "Get pyzed" with your Python. On the workstation, also remove any `~/zed` `export` lines from `~/.bashrc` |
+| The first `open` on a computer stops at `Looking for its calibration` | The SDK downloads the camera's calibration from Stereolabs the first time on each computer. If that computer has no internet, connect it once and open the stream again (the workstation already has the file) |
 | The first `open` seems to hang for minutes | The SDK is preparing the neural depth model for your card; it only does this the first time |
 | `CAMERA NOT INITIALIZED` after it worked | The stream broke (the robot restarted): `cam.close()`, wait a second, and open again. An `open` straight after a `close` fails |
 | `enable_positional_tracking` says `HIGH FREQUENCY SENSORS DATA REQUIRED` | The stream carries the IMU at the picture's rate only (30 Hz), too slow for the SDK's IMU fusion. Set `enable_imu_fusion = False` in `PositionalTrackingParameters`; tracking then runs from the pictures |
