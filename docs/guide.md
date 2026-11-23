@@ -15,7 +15,7 @@ when it moves to the real one.
 Python 3.8 or newer, anywhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.13/g1lab-0.1.13-py3-none-any.whl"
+pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.14/g1lab-0.1.14-py3-none-any.whl"
 ```
 
 That brings `pyzmq`, `msgpack` and `numpy`. Each name in the brackets is an extra;
@@ -28,6 +28,7 @@ leave out what you do not need, or add one by putting its name in the brackets:
 | `missions` | PyYAML | mission files written in YAML |
 | `video` | OpenCV, about 190 MB | a live camera window and video files; pictures and arrays work without it |
 | `export` | pyarrow, OpenCV | `python -m g1lab.export`, recordings to a training set |
+| `vision` | onnxruntime | `r.vision` on the mock: your own detector, run on your computer |
 
 In the lab, the same file is on the **lab board**: open
 `http://192.168.123.222:8090/` in a browser on the Robot Network, which also
@@ -35,7 +36,7 @@ shows who has the robot, who is next, and what the robot's camera sees.
 There, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.13-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.14-py3-none-any.whl
 ```
 
 ### Check you are ready
@@ -149,7 +150,9 @@ block starts.
 `g1lab.Recorder` writes the sensors to a folder, and `g1lab.Recording` reads
 them back, all on one clock. It needs no session and the robot does not move.
 The computer running your program must stay on the Robot Network, and the
-recording lands on that computer.
+recording lands on that computer. Record over a cable plugged into a Robot
+Network switch port, not Wi-Fi: about 1.5 MB arrives every second, and a
+dropped reading leaves a gap that rejects the demo at export.
 
 ```python
 import g1lab
@@ -284,9 +287,10 @@ print(r.services.status())           # every service: what it is, and whether it
 - **deploy, session** move the robot. Only the
   operator starts them, from the launcher; `start()` raises
   `g1lab.ServiceRefused` saying so.
-- **vision, speech, recorder** are planned: `start()` says "not available yet".
-  Recording already works from your own program; see
-  [Recording a dataset](#recording-a-dataset).
+- **vision, speech, recorder** are not available: `start()` says "not available yet".
+  Your own detector needs no service: `r.vision` (see
+  [Your own detector](#your-own-detector-rvision)). Recording runs from your own program
+  on your own computer; see [Recording a dataset](#recording-a-dataset).
 
 `start()` holds a lease for your program, and g1lab renews it every minute
 while your program runs. Ten minutes after the last program using a service
@@ -374,6 +378,8 @@ mock robot's own arms and a red ball in front of the right shoulder
 (`ball=(x, y, z)` moves it, `ball=None` removes it; needs the `camera` extra). The
 simulated camera sits where the robot's camera sits, with the same lens, so
 pixel maths that works here works on the robot.
+`r.vision` runs your own detector on that camera, here on your computer
+([Your own detector](#your-own-detector-rvision)).
 Joints follow the command about 0.1 s behind, as on the robot. The session
 runs like a real one: settling for 2 s after your first pose, then live, and
 after `minutes=` (45) the arms go home and it ends. `say=print` shows the
@@ -394,6 +400,12 @@ mission ones.
 
 Skills in a row (find, go_to, approach, pick, place, drop, home), from a YAML file or
 from Python: [missions.md](missions.md).
+
+## Your own detector: `r.vision`
+
+Upload an ONNX model you trained, and each camera picture goes through it; your program
+reads what it found, each thing with a 3-D point. It runs on `g1lab.mock(camera="render")`
+today, and on the robot once that is switched on: [vision.md](vision.md).
 
 ## Modules
 

@@ -17,20 +17,21 @@ The University of Iowa).
 Python 3.8 or newer, somewhere with internet (the lab's Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.13/g1lab-0.1.13-py3-none-any.whl"
+pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.14/g1lab-0.1.14-py3-none-any.whl"
 ```
 
 `camera` adds Pillow (camera pictures as arrays), `mock` adds MuJoCo (the laptop
 robot) and `missions` adds PyYAML (mission files); leave out what you do not need.
-Add `video` for OpenCV's live window and video files, about 190 MB more, and
-`export` for turning recordings into a training set. Every extra and what needs it:
+Add `video` for OpenCV's live window and video files, about 190 MB more,
+`export` for turning recordings into a training set, and `vision` to run your own
+detector on the mock ([docs/vision.md](docs/vision.md)). Every extra and what needs it:
 [docs/guide.md](docs/guide.md#install).
 
 In the lab, plug into the Robot Network and set your address by hand:
 [section 1 of the camera quickstart](docs/camera_quickstart.md#1-get-on-the-robot-network-and-watch-the-camera).
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.13-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.14-py3-none-any.whl`
 
 Check you are ready: `python -m g1lab.check --host mock` anywhere, then
 `python -m g1lab.check --name YOURNAME` in the lab. Each line says ok, note or FAIL,

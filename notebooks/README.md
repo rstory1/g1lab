@@ -11,6 +11,7 @@ and runs from top to bottom, so read it, run it, and copy what you need.
 | `recording_a_dataset.ipynb` | record the sensors to a folder, read them back, line them up by time |
 | `services_and_language_model.ipynb` | start and stop a service, handle a refusal, ask the language model, test a program that acts on its answer |
 | `refusals_and_errors.ipynb` | what each error means, `set` and `move_to` when a pose is refused, the shape of a program that handles them |
+| `vision_model.ipynb` | run your own detector with `r.vision`: build a small model, export a YOLO one, read boxes and 3-D points, and see why an upload is refused |
 
 **Moving the arms**, best read in this order, since each uses the one before:
 
@@ -38,3 +39,6 @@ that moves the arms needs a session the operator has started, or one from
 The Perception module on the real robot needs a real red ball, about 3 in across. The mock
 and the simulated robot have no depth, so Camera and depth uses made-up points there and
 says so.
+
+The Vision model module needs `pip install onnx onnxruntime`, and `ultralytics` for its
+part 3. It runs on the mock only for now: the robot's side is not switched on yet.

@@ -3,6 +3,21 @@
 What each release added or fixed. To get the newest, run the install line in the
 [README](README.md) again.
 
+## 0.1.14 (2026-11-22)
+
+New
+- `r.vision`: upload your own ONNX detector and read what it finds, each thing with a 3-D
+  point. It runs on `g1lab.mock()` now, on your computer, through the same checks and
+  refusals as the robot; add `vision` to the extras in the install line. With
+  `camera="render"` the mock draws depth too, so detections get their 3-D point. On the
+  robot it is not switched on yet: [docs/vision.md](docs/vision.md).
+- The Vision model module (`notebooks/vision_model.ipynb`): a model small enough to read,
+  with a post.py; a YOLO export from Ultralytics; two models at once; a refused upload.
+
+Fixed
+- A program on `g1lab.mock(camera="render")` that ends without `r.close()` no longer
+  crashes as it exits (it did about one run in three).
+
 ## 0.1.13 (2026-11-21)
 
 Fixed

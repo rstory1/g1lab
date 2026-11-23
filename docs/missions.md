@@ -55,7 +55,7 @@ print(result.status, result.failed_step, result.message)
 | `find` | looks for a label in your detector's output and remembers where it is | `label`, `timeout` 10, `min_conf` 0.5, `scan` (turn while looking) |
 | `go_to` | walks to a point on the map | `x`, `y`, `yaw`, `tolerance` 0.15, `timeout` 60 |
 | `approach` | walks to `standoff` m in front of something `find` saw, then looks again to check | `target`, `standoff` 0.5 |
-| `pick` | reaches the target, closes the hand, lifts; checks the touch pads | `target`, `hand` (auto, left, right), `verify` (pads, none) |
+| `pick` | reaches the target, closes the hand, lifts; checks the touch pads after the close and again with the hand lifted | `target`, `hand` (auto, left, right), `verify` (pads, none) |
 | `place` | puts the held thing at a point in front of the robot (x forward, y left, z up, m) or at a found target | `x`, `y`, `z` or `target` |
 | `drop` | opens the hand where it is | `hand` |
 | `home` | both arms home, checked against the joint readings | `hands` (keep, open) |
