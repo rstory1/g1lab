@@ -60,7 +60,7 @@ p = r.nav.pose()
 with r.control() as c:
     h = r.nav.go_to(p.x + 1.0, p.y, yaw=0.0)     # 1 m along the map's x axis; waits until done
 print(h.result, h.reason)                        # arrived None
-print(h.pose, round(h.remaining_m, 2))           # where it stopped, how far from the goal
+print(h.pose, round(h.remaining_m, 2))           # where it stopped, how far is left along the planned path
 r.close()
 ```
 

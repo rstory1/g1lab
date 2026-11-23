@@ -3,14 +3,56 @@
 What each release added or fixed. To get the newest, run the install line in the
 [README](README.md) again.
 
+## 0.1.15 (2026-11-23)
+
+Fixed
+- The example policy class in the Policy page and in `help(g1lab.policy)` set its state
+  only in `reset()`, so a copy of it failed the check before a trial with
+  `AttributeError`. It sets its state in `__init__` too, and the page says why.
+- The refusal you get from `r.vision` on the robot now says what to do: it is not switched
+  on there yet, so test your model on `g1lab.mock(camera="render")`.
+- `examples/sensors.py` no longer crashes in a simulator session: the simulator's hands
+  have no pads (`hand.pads` is `None` there), and it says so.
+- `examples/go_to_basic.py` prints the straight-line distance to the goal, which is what
+  "arrived within 0.15 m" measures; `h.remaining_m` is along the planned path and can read more.
+- `python -m g1lab.check` with a name already in use says to pick another `--name` or wait
+  10 s, instead of pointing at the address.
+- The Trajectories module waits for a resting arm to finish resting before it measures.
+- The refusal from `record_camera.py`, `zed_easy.py` and `zed_sdk.py` for a missing OpenCV or
+  Pillow no longer says to `pip install` from the Robot Network, which has no internet.
+
+Docs
+- The Record a dataset example reads the camera, which runs on the robot today, not the
+  lidar, which does not yet.
+- The `NoSession` fix is `r.services.start("sim", wait=120)` or waiting; "no answer" means
+  a wrong address or that the robot computer is not running.
+- The vision page and module open with where it runs today (the mock), say plainly that
+  the mock's depth is used only inside `r.vision`, and no longer name the robot's internals.
+- The guide opens by saying what runs only on the simulated robot (moving the arms), and the
+  `ServiceRefused` row gives a fix for each cause.
+- The raw-message page shows the timeout a program really gets (`zmq.error.Again`) and says to
+  make a new socket after it.
+- The missions page says `mission run` does not start the walking simulator, and how to.
+- The mock world's help gives one table height (+0.1 m in the pelvis frame for a 36 in table).
+- The policy page lists the floor's values; the vision page's example comment puts `resize`
+  inside `input`; the ZED SDK page says how to get the calibration on the Robot Network.
+- Logging in to the robot computer for the ZED SDK: at its own desk, with your own
+  university account.
+- `help()` text for `g1lab.reach`, `g1lab.mock`, `g1lab.vision` and the simulated detector no
+  longer names lab scripts, runs or modules; `NoSession` and `Disconnected` say what to
+  do. `help(g1lab.vision)` says where it runs today. The ZED
+  service is "usually a few seconds, up to a minute the first time" everywhere.
+
 ## 0.1.14 (2026-11-22)
 
 New
 - `r.vision`: upload your own ONNX detector and read what it finds, each thing with a 3-D
-  point. It runs on `g1lab.mock()` now, on your computer, through the same checks and
-  refusals as the robot; add `vision` to the extras in the install line. With
-  `camera="render"` the mock draws depth too, so detections get their 3-D point. On the
-  robot it is not switched on yet: [docs/vision.md](docs/vision.md).
+  point. It runs on `g1lab.mock()` now, on your computer, through the robot's own manifest and
+  upload checks; the robot's 100 ms per-frame limit is applied only when you upload to the
+  robot. Add `vision` to the extras in the install line. With `camera="render"` the mock
+  gives each detection a 3-D point from the render's depth (`r.depth.read()` still raises
+  `NoData` on the mock). On the robot it is not switched on yet:
+  [docs/vision.md](docs/vision.md).
 - The Vision model module (`notebooks/vision_model.ipynb`): a model small enough to read,
   with a post.py; a YOLO export from Ultralytics; two models at once; a refused upload.
 

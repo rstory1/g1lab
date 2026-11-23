@@ -65,7 +65,8 @@ def save_picture(r, path):
     try:
         from PIL import Image, ImageDraw
     except ImportError:
-        sys.exit("--picture needs Pillow: pip install pillow (or g1lab's camera option)")
+        sys.exit("--picture needs Pillow: add `camera` to the extras in the g1lab install line "
+                 "(the Robot Network has no internet; install it where there is some)")
     import io
     _, jpeg = r.camera.jpeg()
     _, depth = r.depth.image()
@@ -102,7 +103,7 @@ def main():
          else g1lab.connect(a.host, name=a.name, port=a.port))
     try:
         print("starting the zed service ...")
-        r.services.start("zed", wait=180)            # minutes only the very first time on a computer
+        r.services.start("zed", wait=180)            # usually a few seconds, up to a minute the first time
         if a.host != "mock":                         # (the mock never has any: no point waiting)
             r.depth.image(timeout=60)                # "running" comes a few seconds before the first data
         end = time.time() + a.seconds

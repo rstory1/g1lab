@@ -51,7 +51,7 @@ $PY examples/zed_sdk.py --objects --seconds 30 --picture seen.jpg
 $PY examples/zed_sdk.py --svo episode.svo2 --objects   # a recording, no robot
 ```
 
-On your own laptop use your own Python with pyzed instead. It uses
+The example uses
 `NEURAL_LIGHT` depth unless you ask for another (`--depth-mode NEURAL`): the
 lightest on a shared graphics card. `--picture` needs OpenCV. The first run
 on a computer prepares each model it uses, which takes minutes.
@@ -80,8 +80,8 @@ tracking.
   build that matches your CUDA), plug into the Robot Network as in
   [camera_quickstart.md](camera_quickstart.md) section 1, then get pyzed as
   below. The H.265 stream takes a few Mbit/s.
-- **The robot computer** (`192.168.123.222`, the RTX 5090). Students can log in
-  to it: use your own account there. SDK 5.6 is installed for everyone in `/usr/local/zed`, so
+- **The robot computer** (`192.168.123.222`, the RTX 5090). Log in at the robot
+  computer's own desk with your own university account. SDK 5.6 is installed for everyone in `/usr/local/zed`, so
   you only need pyzed in your own Python (below). Nothing else to set: no
   `export` lines.
 
@@ -89,7 +89,9 @@ tracking.
 
 pyzed is the SDK's Python package. Stereolabs' script installs it into
 whichever Python runs it, so make your own environment and run it from there
-(the same on the robot computer and on a laptop):
+(the same on the robot computer and on a laptop). The `pip` line and the script download
+files. The robot computer has internet, so there they work as shown. The Robot
+Network has none, so on a laptop run them before you join it:
 
 ```
 python3 -m venv ~/zedenv
@@ -171,8 +173,8 @@ and no stream: use `init.set_from_svo_file("episode.svo2")` instead of
 | What you see | What it means |
 |---|---|
 | `open` fails with a connection error | The robot or its camera server is off, or you are not on the Robot Network. Open `http://192.168.123.222:8090/`: if the board shows no picture, the camera is down |
-| `import pyzed` fails with `undefined symbol` | Your pyzed was built for another SDK version Rerun the `get_python_api.py` line in "Get pyzed" with your Python. On the robot computer, also remove any `~/zed` `export` lines from `~/.bashrc` |
-| The first `open` on a computer stops at `Looking for its calibration` | The SDK downloads the camera's calibration from Stereolabs the first time on each computer. If that computer has no internet, connect it once and open the stream again (the robot computer already has the file) |
+| `import pyzed` fails with `undefined symbol` | Your pyzed was built for another SDK version. Rerun the `get_python_api.py` line in "Get pyzed" with your Python. On the robot computer, also remove any `~/zed` `export` lines from `~/.bashrc` |
+| The first `open` on a computer stops at `Looking for its calibration` | The SDK downloads the camera's calibration from Stereolabs the first time on each computer. On a laptop, keep your Wi-Fi up while the wired Robot Network connection is on (leave Router and DNS empty, [camera_quickstart.md](camera_quickstart.md) section 1), then open the stream again. The robot computer already has the file |
 | The first `open` seems to hang for minutes | The SDK is preparing the neural depth model for your card; it only does this the first time |
 | `CAMERA NOT INITIALIZED` after it worked | The stream broke (the robot restarted): `cam.close()`, wait a second, and open again. An `open` straight after a `close` fails |
 | `enable_positional_tracking` says `HIGH FREQUENCY SENSORS DATA REQUIRED` | The stream carries the IMU at the picture's rate only (30 Hz), too slow for the SDK's IMU fusion. Set `enable_imu_fusion = False` in `PositionalTrackingParameters`; tracking then runs from the pictures |

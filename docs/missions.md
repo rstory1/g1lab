@@ -29,6 +29,12 @@ Check it before anything moves, and run it:
     python -m g1lab.mission steps fetch.yaml           # every step with its defaults filled in
     python -m g1lab.mission run fetch.yaml --host 192.168.123.222 --name YOURNAME   # in the lab; on a laptop see "Try it"
 
+`mission run` does not start the walking simulator: it connects to one that is already up. In the
+lab, start it first (about a minute), then run the mission; the simulator keeps running after this
+line ends:
+
+    python -c "import g1lab; g1lab.connect('192.168.123.222', name='YOURNAME').services.start('walk', wait=300)"
+
 Reading a YAML file needs the `missions` extra (PyYAML), which the README's install line has. A file
 written as JSON works without it.
 

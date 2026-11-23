@@ -70,7 +70,8 @@ def save_picture(path, image, objects, w, h):
     try:
         import cv2                                  # the ZED's own samples draw with OpenCV too
     except ImportError:
-        sys.exit("--picture needs OpenCV: pip install opencv-python")
+        sys.exit("--picture needs OpenCV: install opencv-python in the Python you run this with "
+                 "(the Robot Network has no internet; install it where there is some)")
     bgra = image.get_data()                         # h x w x 4, blue-green-red-alpha
     cut = (w - h * PIC_W // PIC_H) // 2
     pic = cv2.resize(bgra[:, cut:w - cut, :3], (PIC_W, PIC_H), interpolation=cv2.INTER_AREA)

@@ -7,15 +7,16 @@ do not go down when your program stops to think, print or draw a plot. Each
 problem comes back as its own named error: see
 [When something goes wrong](#when-something-goes-wrong).
 
-**Right now this runs on the simulated robot.** Your program does not change
-when it moves to the real one.
+**Moving the arms runs on the simulated robot for now; reading the camera, depth and
+the ZED already works on the real robot.** Your program does not change when the arms
+open on the real one.
 
 ## Install
 
 Python 3.8 or newer, anywhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.14/g1lab-0.1.14-py3-none-any.whl"
+pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.15/g1lab-0.1.15-py3-none-any.whl"
 ```
 
 That brings `pyzmq`, `msgpack` and `numpy`. Each name in the brackets is an extra;
@@ -36,7 +37,7 @@ shows who has the robot, who is next, and what the robot's camera sees.
 There, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.14-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.15-py3-none-any.whl
 ```
 
 ### Check you are ready
@@ -88,7 +89,7 @@ Reading works any time, without a session and without waiting your turn.
 | `r.state.joints()` | all 29 joints: `q` (angles), `target`, `temp`. `js.arm("right")` gives the 7 arm angles in the usual order; `js["R_elbow"]` one joint |
 | `r.state.imu()` | the body's tilt: `rpy` (roll, pitch, yaw) and `quat` |
 | `r.state.temps()` | motor temperatures, and the `hottest` one |
-| `r.hands.state("right")` | `q` (7 finger angles), `pads` (9 touch pads, names in `pad_names`), `temp` |
+| `r.hands.state("right")` | `q` (7 finger angles), `pads` (9 touch pads, names in `pad_names`; `None` in the simulator, which has none), `temp` |
 | `r.camera.read()` | `(t, picture)`: an array of height × width × 3 colours (needs Pillow). `r.camera.jpeg()` gives the JPEG file instead |
 | `r.depth.read()` | `(t, xyz, rgb)`: 3-D points in metres and their colours |
 | `r.depth.image()` | `(t, depth)`: a distance in metres for every pixel of the camera picture, `NaN` where it could not measure. **Needs `r.services.start("zed")`**: see [the camera quickstart](camera_quickstart.md#7-depth-for-every-pixel-and-the-zeds-objects-bodies-and-pose) |
@@ -141,7 +142,7 @@ block starts.
 
 - `clamped`: you asked for more than a joint can do; the robot went as far as it is allowed;
 - `held`: the arms stopped part way, because going on would hit something;
-- `resting`: an arm was up too long and is resting by its side, for the seconds shown;
+- `resting`: an arm was up too long and is resting by its side, for the seconds shown. `c.status.reply.get("resting_why")` says when the raised time came from the program before yours (the 30 s count is the robot's, shared by whoever drives);
 - `refused`: the last pose was refused, and why. It goes back to None when a pose is taken again.
   The arms hold the last safe pose, and a `move_to` or `home()` after a refused `set` starts from there.
 
@@ -160,7 +161,7 @@ import g1lab
 run = g1lab.Recorder("192.168.123.222", "hallway").run(seconds=30)
 # on a laptop: g1lab.Recorder(g1lab.mock(camera="render"), "hallway")
 print(run)                                     # what it holds, per sensor
-for t, lidar in run.read("lidar"):
+for t, picture in run.read("camera"):
     joints = run.at("joints", t, max_age=0.1)  # (time, joints) at that moment
 ```
 
@@ -235,14 +236,14 @@ Each problem is its own exception, so you can catch the one you expect:
 
 | Exception | What it means | What to do |
 |---|---|---|
-| `Disconnected` | no answer from the robot computer | check the address (in the lab: `192.168.123.222`) |
-| `NoSession` | the robot computer answers, but no session is running | the operator starts one; `control()` waits for it |
+| `Disconnected` | no answer from the robot computer: the address is wrong, or the robot computer is not running | check the address (in the lab: `192.168.123.222`) |
+| `NoSession` | the robot computer answers, but no session is running | start a simulator session with `r.services.start("sim", wait=120)`, or wait: `control()` waits for one |
 | `Busy` | someone else has the robot (`e.owner`, your place `e.place`) | `control()` waits your turn; this comes only when `wait` runs out |
 | `NameInUse` | someone on another computer uses your name | pick another `name` |
 | `Refused` | the pose would hit the robot itself (`e.reason` says what) | change that arm's angles. `move_to` raises it; after `set` it shows on `c.status.refused` |
 | `Ended` | the session is over, or ending | stop; your program is done |
 | `NoData` | a sensor sent nothing | that sensor is off, or the session does not carry it |
-| `ServiceRefused` | `r.services.start()` may not start that service (`e` says why) | read the reason; the operator starts robot services |
+| `ServiceRefused` | `r.services.start()` may not start that service (`e` says why) | the reason says which. Graphics card too full (`llm`, `zed`): stop your own other service or try again later; the reason gives the numbers. "not available yet": there is no such service yet. Session or deployment services: they start only from the launcher, so start `"sim"` or `"walk"` instead |
 
 They all belong to `g1lab.G1LabError`.
 
@@ -263,7 +264,7 @@ r.services.start("sim", wait=120)    # a simulated robot for your program; tens 
 with r.control() as c:               # then use it as usual
     ...
 r.services.start("llm", wait=120)    # the language model on the robot computer
-r.services.start("zed", wait=180)    # the ZED's depth image, objects, bodies and pose (r.zed); usually a few seconds
+r.services.start("zed", wait=180)    # the ZED's depth image, objects, bodies and pose (r.zed); usually a few seconds, up to a minute the first time
 print(r.services.status("llm"))      # ServiceInfo(name='llm', state='running', programs=1, ...)
 r.services.stop("llm")               # you are done with it
 print(r.services.status())           # every service: what it is, and whether it runs

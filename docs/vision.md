@@ -1,15 +1,17 @@
 # Your own detector: `r.vision`
 
 
-Train a detector, export it to ONNX, and it runs on the robot's own computer. You get
-what it found, with a 3-D point for each thing.
+Train a detector, export it to ONNX, and get back what it found, with a 3-D point for
+each thing.
 
 **Where it runs today.** On `g1lab.mock()`, now: the mock runs your model on your own
 computer, through the robot's own checks, and needs the `vision` extra (onnxruntime;
-[Install](guide.md#install)). Use `g1lab.mock(camera="render")`: it draws depth with each
-picture, so detections get their 3-D point; with the recorded clip `xyz` is `None`. On the
-robot it is not switched on yet, and `upload()` is refused with "the vision slot on the
-robot's Jetson does not answer"; the same program will work there unchanged once it is.
+[Install](guide.md#install)). Use `g1lab.mock(camera="render")`: each detection gets a 3-D
+point from the render's depth (`r.depth.read()` still raises `NoData` on the mock); with
+the recorded clip `xyz` is `None`. On the robot it is not switched on yet, and `upload()`
+is refused with "r.vision does not answer on the robot: it is not switched on there yet,
+or the robot is off. Test your model on g1lab.mock(camera="render") meanwhile." The same
+program will work there unchanged once it is.
 The [Vision model module](../notebooks/vision_model.ipynb) goes through all of it.
 
 ```python
@@ -69,7 +71,7 @@ def post(image, outputs, detections, manifest):
 ```
 
 ```python
-r.vision.upload("rfdetr.onnx", "rfdetr.json", post="post.py")    # "task": "raw", "post": true, "resize": "stretch"
+r.vision.upload("rfdetr.onnx", "rfdetr.json", post="post.py")    # "task": "raw", "post": true, "input": {..., "resize": "stretch"}
 ```
 
 `image` is the camera picture, RGB. For a `detect`, `pose` or `segment` model `detections` already

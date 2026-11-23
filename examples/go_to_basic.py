@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Walk to a point 1 m straight ahead with r.nav.go_to() and print how it ended.
-"arrived" means within the tolerance of the goal: 0.15 m unless you pass tolerance=.
+"arrived" means within the tolerance of the goal, in a straight line: 0.15 m unless you pass tolerance=.
 
     python3 go_to_basic.py --host mock --name YOURNAME             # laptop: the walking mock
     python3 go_to_basic.py --host 192.168.123.222 --name YOURNAME  # lab: the walking simulator
@@ -36,6 +36,8 @@ with r.control() as c:                              # waits for your turn
 print("result:", h.result)                          # "arrived", "blocked", "no_path", "stopped", ...
 if h.result != "arrived":
     print("why:", h.reason)                         # the reason, in words
-print(f"ended at ({h.pose[0]:.2f}, {h.pose[1]:.2f}), {h.remaining_m:.2f} m from the goal "
-      f"(arrived counts within 0.15 m)")
+straight = math.hypot(goal_x - h.pose[0], goal_y - h.pose[1])
+print(f"ended at ({h.pose[0]:.2f}, {h.pose[1]:.2f}), {straight:.2f} m from the goal in a straight "
+      f"line (arrived counts within 0.15 m; h.remaining_m measures along the planned path, "
+      f"so it can read more)")
 r.close()

@@ -39,7 +39,9 @@ torch.jit.script(net).save("reach.pt")
 ## A Python class
 
 Use one when you need your own logic around a network. The folder holds your file and a
-`policy.json` of `{"file": "my_policy.py"}`:
+`policy.json` of `{"file": "my_policy.py"}`. Set up what `act()` needs in `__init__`,
+because the check before a trial calls `act()` before the first `reset()`:
+
 
 ```python
 import numpy as np
@@ -48,6 +50,9 @@ from g1lab.policy import Policy
 class Reach(Policy):
     inputs = ("right_arm_q", "right_pads")
     outputs = ("right_arm",)
+
+    def __init__(self):
+        self.start = None
 
     def reset(self):
         self.start = None               # a new episode
@@ -142,7 +147,7 @@ inside them and counted as `clamped`.
 
 ## From your folder to the robot
 
-1. **Simulator trials.** Several episodes, scored against the instructor's floor: how many
+1. **Simulator trials.** Several episodes, scored against the floor, the minimum scores a trial must reach: how many
    finished, how many answers were late or refused, and the rate. For now, finishing an
    episode counts as success; a test for your task comes with the lab's simulator scene.
 2. **The operator's approval.** It is for those exact files. **If you change one byte,
@@ -157,8 +162,16 @@ You can make the floor stricter for your own policy, never looser:
  "floor": {"min_success": 1.0}}
 ```
 
-The numbers are `min_episodes`, `min_success`, `max_watchdog_trips`, `max_refused_share`,
-`max_miss_share` and `min_hz`.
+The numbers, with the floor's values for now (the operator may change them):
+
+| Number | Floor | Means |
+|---|---|---|
+| `min_episodes` | 5 | episodes in one trial |
+| `min_success` | 0.8 | share of episodes that succeeded |
+| `max_watchdog_trips` | 0 | episodes that ended with no output for 0.5 s |
+| `max_refused_share` | 0.02 | share of outputs the joint checks refused |
+| `max_miss_share` | 0.05 | share of requests answered later than 40 ms |
+| `min_hz` | 40 | outputs a second, averaged over the trial |
 
 ## Trying it without the robot
 

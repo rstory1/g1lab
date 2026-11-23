@@ -24,7 +24,8 @@ and runs from top to bottom, so read it, run it, and copy what you need.
 
 ## Run one
 
-Install `g1lab` as the [README](../README.md) says, with `camera,mock`, then:
+Install `g1lab` as the [README](../README.md) says, with `camera,mock`, then (run the pip
+lines somewhere with internet, before you plug into the Robot Network, which has none):
 
 ```
 pip install jupyter matplotlib

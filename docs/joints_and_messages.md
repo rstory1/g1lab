@@ -5,8 +5,7 @@ hands to those angles, joint by joint. You control both arms (7 joints each) and
 (7 joints each). The robot keeps its own balance and legs, so you never have
 to think about standing up.
 
-**Right now this runs on the simulated robot.** Your program does not change
-when it moves to the real one.
+**The same program runs on the simulated robot and the real one.**
 
 **The easier way: the `g1lab` package** ([guide.md](guide.md)). It keeps
 sending for you, reads the sensors, and names each problem. This guide shows
@@ -88,7 +87,7 @@ The answer looks like:
 | `waiting` | the session has started; nothing moves yet |
 | `settling` | the robot is easing into its starting pose, then towards your angles |
 | `live` | the robot is following you |
-| `homing` | time is up; the arms are going down and your messages are ignored |
+| `homing` | the arms are going down and your messages are ignored: time is up, or the operator pressed ARMS HOME (then the session goes on; see below) |
 | `ended` | the session is over; your program should stop |
 
 ## Which way the joints turn
@@ -148,7 +147,7 @@ You don't need to do anything about these, but they explain what you'll see.
 - **Fast arms are slowed.** If your pose would move a hand faster than 1.2 metres a second, the whole arm slows down.
 - **Poses that hit the robot are refused.** If a hand would touch the body, the head or the other hand, or an arm would touch a leg, the answer has `"ok": false` and says what would be hit. The arms stay where they were.
 - **The path is checked too.** If your pose is fine but the way there is not, the arms stop at the last safe point and the answer has `held`. The arm then swings out to the side to go round, if it can.
-- **Raised arms get a rest.** Holding an arm up makes its shoulder motor hot. After 30 seconds raised, the arm goes down and rests for about 15 seconds, then follows you again. Plan programs that lower the arms now and then.
+- **Raised arms get a rest.** Holding an arm up makes its shoulder motor hot. After 30 seconds raised, the arm goes down and rests for about 15 seconds, then follows you again. Plan programs that lower the arms now and then. The count is the robot's, not yours: if the program before you left an arm up, its time is still on the clock when you start, and your arm may rest sooner than 30 seconds in. The answer says so (`resting_why`: "raised by the program before yours").
 - **Silence puts the arms down.** After 1 second with no messages, the arms go slowly down and the hands open. Send again and the robot comes back to you.
 - **One student at a time.** Someone else gets "*ana has the robot*" until you send `release` or stop sending for 10 seconds.
 - **The operator and the spotter can always step in.** They can open the hands or end the session at any time.
@@ -172,18 +171,19 @@ make it sway a little. That is normal.
 
 | You see | What to do |
 |---|---|
-| `no answer from ... -- is a session running?` | Check the address and port (in the lab: `192.168.123.222`, `5600`). The operator must start a session before your program connects. |
+| `zmq.error.Again: Resource temporarily unavailable` | The program above waited 2 s (`RCVTIMEO`) and got no answer. Check the address and port (in the lab: `192.168.123.222`, `5600`). If both are right, the robot computer is not running. The socket is now stuck: close it and make a new one before sending again, or the next send fails with `Operation cannot be accomplished in current state`. |
 | `... has the robot` | Another student is driving. Wait until they finish, or for 10 s after they stop. |
 | `... you are 2nd in line` | Keep sending: you get the robot when it is your turn. Stop for 3 s and you lose your place. |
-| `no session is running` | The robot is reachable, but the operator has not started a session yet. Keep sending, or wait. |
+| `no session is running` | The robot is reachable, but no session has started yet. Keep sending, or wait. |
 | `the SIM session is still starting` | The session your program asked for with `r.services.start` is coming up. Keep sending; `control()` waits for it. |
 | `the name 'ana' is in use from ...` | Someone on another computer uses that name. Pick another `--name`. |
 | `unknown key(s) ['left_arms']` | A typo in a group name. The names are `left_arm`, `right_arm`, `left_hand` and `right_hand`. |
 | `right_arm must be a list of 7 numbers` | A list has the wrong length, or contains text or `True`/`False`. |
 | `right_arm has NaN or infinity` | Your maths produced "not a number" or infinity, for example from dividing by zero. |
-| `Operation cannot be accomplished in current state` | You sent twice without reading the answer in between. Always `recv()` after each `send()`. |
+| `Operation cannot be accomplished in current state` | You sent twice without reading the answer in between: always `recv()` after each `send()`. It also comes after a timeout (`zmq.error.Again`) on the same socket: close it and make a new one. |
 | The robot stopped following and the arms went down | Your program paused for more than 1 second, or the session's time ran out. If `phase` is `ended`, the session is over. |
 | `the right hand would hit the head; pose refused` | That pose puts part of the robot into itself. Change that arm's angles, often shoulder_roll or elbow. |
 | `held` in the answer | The way to your pose is blocked. The arm tries to go round by itself, swinging out to the side. If `held` stays, go via a pose with the arm further out to the side or forward. |
-| `resting` in the answer, and the arm went down | The arm was up for 30 s. Wait for it, and lower the arms between raises. |
+| `resting` in the answer, and the arm went down | The arm was up for 30 s. Wait for it, and lower the arms between raises. If `resting_why` says "raised by the program before yours", the time came from the program before yours; it is the same wait. |
+| `the operator sent the arms home, so your turn is over: call control() again to get in line` | The operator pressed ARMS HOME. The arms went home and your turn ended; the session is still running. Call `control()` again to take a place in the line. |
 | The arm doesn't quite match your angles | See the section above. Fast movement lags; held poses settle within a few degrees. |

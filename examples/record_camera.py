@@ -11,7 +11,8 @@ Needs no session; the robot does not move.
 
 Writes <out>/frame_00001.jpg ... and <out>/frames.csv (frame, camera time,
 time saved). Pictures are 640 x 480, the left eye, at most 15 a second.
---video needs OpenCV (`pip install opencv-python`, or g1lab's `video` option).
+--video needs OpenCV: add `video` to the extras in the install line (the Robot Network
+itself has no internet, so install it where there is some).
 """
 
 import argparse
@@ -41,7 +42,9 @@ def main():
         try:
             import cv2  # noqa: F401
         except ImportError:
-            sys.exit("--video needs OpenCV: pip install opencv-python (the pictures alone do not)")
+            sys.exit("--video needs OpenCV: add `video` to the extras in the g1lab install line "
+                 "(the Robot Network has no internet; install it where there is some). "
+                 "The pictures alone do not need it")
 
     r = (g1lab.mock(name=a.name) if a.host == "mock"
          else g1lab.connect(a.host, name=a.name, port=a.port))

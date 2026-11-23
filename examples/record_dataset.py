@@ -9,8 +9,7 @@ Needs no session; the robot does not move.
     python3 record_dataset.py --host 192.168.123.222 --name YOURNAME --seconds 30 --out hallway
 
 About 1.5 MB a second without depth, so a minute is about 90 MB. Prints what
-it got, then each lidar reading (or, on the mock, each odometry reading) next
-to the joints at that moment.
+it got, then every tenth camera picture next to the joints at that moment.
 """
 
 import argparse
@@ -39,7 +38,7 @@ def main():
         rec = g1lab.Recorder(r, a.out).run(a.seconds)
     print(rec)
 
-    topic = "lidar" if "lidar" in rec.topics else "odom"
+    topic = "camera"
     for k, (t, _) in enumerate(rec.read(topic, raw=True)):
         if k % 10 == 0:
             joints = rec.at("joints", t)
