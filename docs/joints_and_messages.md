@@ -179,7 +179,7 @@ make it sway a little. That is normal.
 | `the SIM session is still starting` | The session your program asked for with `r.services.start` is coming up. Keep sending; `control()` waits for it. |
 | `the name 'ana' is in use from ...` | Someone on another computer uses that name. Pick another `--name`. |
 | `unknown key(s) ['left_arms']` | A typo in a group name. The names are `left_arm`, `right_arm`, `left_hand` and `right_hand`. |
-| `right_arm must be a list of 7 numbers` | A list has the wrong length, or contains text or `True`/`False`. |
+| `right_arm must be a list of 7 numbers (rad): ['shoulder_pitch', ...]` | A list has the wrong length, or contains text or `True`/`False`. |
 | `right_arm has NaN or infinity` | Your maths produced "not a number" or infinity, for example from dividing by zero. |
 | `Operation cannot be accomplished in current state` | You sent twice without reading the answer in between: always `recv()` after each `send()`. It also comes after a timeout (`zmq.error.Again`) on the same socket: close it and make a new one. |
 | The robot stopped following and the arms went down | Your program paused for more than 1 second, or the session's time ran out. If `phase` is `ended`, the session is over. |

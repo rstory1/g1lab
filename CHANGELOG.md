@@ -3,6 +3,21 @@
 What each release added or fixed. To get the newest, run the install line in the
 [README](README.md) again.
 
+## 0.1.17 (2026-11-24)
+
+Fixed
+- `r.session().time_left` was `None` on the first call after `connect()`, even in a live
+  session. The first call now waits up to 2 s for the robot computer's first session update
+  and reports the seconds left. It is still `None` before LIVE and when there is no session.
+- `r.info().backend` said `"robot"` when there was no session, which is not a fact the robot
+  computer has. It is `None` until a session starts, then `"robot"` or `"sim"` (`"mock"` on the mock).
+- `pip install "g1lab[vision]"` did not install `onnx`, which the Vision model module needs
+  to build its model. The `vision` extra now installs `onnx` and `onnxruntime`.
+
+Docs
+- The `r.info()` and `r.session()` rows in the API table say what `backend` and `time_left`
+  hold, and the `vision` extra lists both packages.
+
 ## 0.1.16 (2026-11-23)
 
 Fixed

@@ -16,7 +16,7 @@ open on the real one.
 Python 3.8 or newer, anywhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.16/g1lab-0.1.16-py3-none-any.whl"
+pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.17/g1lab-0.1.17-py3-none-any.whl"
 ```
 
 That brings `pyzmq`, `msgpack` and `numpy`. Each name in the brackets is an extra;
@@ -29,7 +29,7 @@ leave out what you do not need, or add one by putting its name in the brackets:
 | `missions` | PyYAML | mission files written in YAML |
 | `video` | OpenCV, about 190 MB | a live camera window and video files; pictures and arrays work without it |
 | `export` | pyarrow, OpenCV | `python -m g1lab.export`, recordings to a training set |
-| `vision` | onnxruntime | `r.vision` on the mock: your own detector, run on your computer |
+| `vision` | onnx, onnxruntime | `r.vision` on the mock: your own detector, run on your computer |
 
 In the lab, the same file is on the **lab board**: open
 `http://192.168.123.222:8090/` in a browser on the Robot Network, which also
@@ -37,7 +37,7 @@ shows who has the robot, who is next, and what the robot's camera sees.
 There, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.16-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.17-py3-none-any.whl
 ```
 
 ### Check you are ready
@@ -84,8 +84,8 @@ Reading works any time, without a session and without waiting your turn.
 
 | Call | What you get |
 |---|---|
-| `r.info()` | `phase`, `owner` (who has the robot), `queue`, and for each group (`left_arm`, `right_arm`, `left_hand`, `right_hand`): `groups` (joint names), `limits` (low, high), `home` |
-| `r.session()` | `phase`, `owner`, `queue`, `time_left` (seconds left in the session, counted from LIVE; None before LIVE) |
+| `r.info()` | `phase`, `owner` (who has the robot), `queue`, `backend` (`"robot"` or `"sim"`, `"mock"` on `g1lab.mock()`; None when there is no session), and for each group (`left_arm`, `right_arm`, `left_hand`, `right_hand`): `groups` (joint names), `limits` (low, high), `home` |
+| `r.session()` | `phase`, `owner`, `queue`, `time_left` (seconds left in the session, counted from LIVE; None before LIVE and when there is no session) |
 | `r.state.joints()` | all 29 joints: `q` (angles), `target`, `temp`. `js.arm("right")` gives the 7 arm angles in the usual order; `js["R_elbow"]` one joint |
 | `r.state.imu()` | the body's tilt: `rpy` (roll, pitch, yaw) and `quat` |
 | `r.state.temps()` | motor temperatures, and the `hottest` one |
@@ -184,8 +184,8 @@ From a terminal: `python -m g1lab.record --host 192.168.123.222 --seconds 60
 | `run.backend` | `"robot"` or `"sim"`: what it was recorded from (`None` if the recording does not say) |
 
 A camera value is the picture, a depth value is `(xyz, rgb)`, a `depth.image` value is the depth image (`run.topics` and `run.play()` name it `zed.depth`), and every other
-value is the same dictionary the stream carries. Pass `raw=True` to get the
-stored message instead, untouched.
+value comes back as the same kind of object the live read gives (`JointState`, `Imu`, and so on). Pass `raw=True` to get the
+stored message (a plain dictionary) instead, untouched.
 
 **Size:** about 1.5 MB a second, so a minute is about 90 MB. Depth adds about
 0.9 MB a second. **The clock:** every `t` is the robot computer's clock. Camera
@@ -366,8 +366,8 @@ program that acts on the answer, give it one:
 
 No robot, no network: `r = g1lab.mock(name="YOURNAME")` answers every call
 `connect()` does, and runs the robot's own safety code, so a pose the robot
-refuses is refused here too, with the same words. Every example takes
-`--host mock`. Needs the `mock` extra ([Install](#install)).
+refuses is refused here too, with the same words. Most examples take
+`--host mock`; `mission_basic.py` has no `--host` (it runs on the mock), and `zed_sdk.py` has no mock. Needs the `mock` extra ([Install](#install)).
 
 ```python
 r = g1lab.mock(name="YOURNAME", view=True)  # view: a 3-D window with the robot's pose

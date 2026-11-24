@@ -28,14 +28,14 @@ program will get `NoData` too.
 Python 3.8 or newer, somewhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.16/g1lab-0.1.16-py3-none-any.whl"
+pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.17/g1lab-0.1.17-py3-none-any.whl"
 ```
 
 The live window in section 4 also needs OpenCV (about 190 MB): use
 `g1lab[camera,video]` in that line.
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.16-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.17-py3-none-any.whl`
 
 Then, on the Robot Network, `python -m g1lab.check --name YOURNAME`: one line per
 check with the fix, from your address to whether the camera's stream (port 5601)
@@ -272,5 +272,5 @@ draws a simulated camera view with a red ball instead.
 | `NoData` from `r.depth.image()` or `r.zed...` | The zed service is not running: `r.services.start("zed")` |
 | `NoData` or `ServiceRefused` from the zed calls while a simulator session runs | The ZED's data comes from the real camera only; in the simulator use `r.camera.read()` |
 | `ServiceRefused` from `start("zed")` | The graphics card is too full right now; the message gives the numbers. Try again later |
-| `ModuleNotFoundError: PIL` | Add `camera` to the extras in the install line (section 2): `camera.read()` needs it |
+| `r.camera.read() needs Pillow or OpenCV to decode the picture: pip install pillow ...` | Add `camera` to the extras in the install line (section 2): `camera.read()` needs it |
 | Colors look wrong in OpenCV | Convert RGB to BGR, as in section 4 |

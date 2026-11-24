@@ -17,7 +17,7 @@ The University of Iowa).
 Python 3.8 or newer, somewhere with internet (the lab's Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.16/g1lab-0.1.16-py3-none-any.whl"
+pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.17/g1lab-0.1.17-py3-none-any.whl"
 ```
 
 `camera` adds Pillow (camera pictures as arrays), `mock` adds MuJoCo (the laptop
@@ -31,7 +31,7 @@ In the lab, plug into the Robot Network and set your address by hand:
 [section 1 of the camera quickstart](docs/camera_quickstart.md#1-get-on-the-robot-network-and-watch-the-camera).
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.16-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.17-py3-none-any.whl`
 
 Check you are ready: `python -m g1lab.check --host mock` anywhere, then
 `python -m g1lab.check --name YOURNAME` in the lab. Each line says ok, note or FAIL,
@@ -69,7 +69,7 @@ r.close()
 |---|---|
 | `r.state.joints()` | `.q`, `.target`, `.temp` of all 29 joints; `.arm("right")`; `js["R_elbow"]` |
 | `r.state.imu()` | body tilt: `.rpy` (rad), `.quat` |
-| `r.state.temps()` | `["hottest"]`, `["body"]`, `["hand_r"]`, `["hand_l"]` (deg C) |
+| `r.state.temps()` | `["hottest"]["c"]` (with `["hottest"]["where"]`), `["body"]`, `["hand_r"]`, `["hand_l"]` (deg C) |
 | `r.hands.state("right")` | `.q`, `.pads` (touch, named by `.pad_names`; `None` in the simulator), `.temp` |
 | `r.camera.read()`, `r.camera.jpeg()` | `(t, picture)` as an RGB array or JPEG bytes |
 | `r.depth.read()` | `(t, xyz, rgb)` 3-D points from the camera; robot only |

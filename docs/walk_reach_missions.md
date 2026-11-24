@@ -44,7 +44,7 @@ safety layer the operator sets up, and your program cannot loosen it: at most
 0.3 m/s (1 ft/s) forward, slowing near obstacles and stopping about 0.6 m (2 ft)
 from one, and stopping within half a second if your program goes quiet. It
 also takes a moment to stop, so leave room. The simulated robot starts late and
-walks slower than you ask: read what it really does from `c.status.delivered`.
+walks slower than you ask: read what it really does from `c.status.delivered` ((vx, vy, wz), walking SIM only).
 
 ## 1. Walk to a point: `r.nav.go_to()`
 

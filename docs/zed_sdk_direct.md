@@ -80,10 +80,9 @@ tracking.
   build that matches your CUDA), plug into the Robot Network as in
   [camera_quickstart.md](camera_quickstart.md) section 1, then get pyzed as
   below. The H.265 stream takes a few Mbit/s.
-- **The robot computer** (`192.168.123.222`, the RTX 5090). Log in at the robot
-  computer's own desk with your own university account. SDK 5.6 is installed for everyone in `/usr/local/zed`, so
-  you only need pyzed in your own Python (below). Nothing else to set: no
-  `export` lines.
+- **The robot computer in the lab.** The ZED SDK is already installed there for
+  everyone, so you only need pyzed in your own Python (below). Nothing else to set:
+  no `export` lines.
 
 ## Get pyzed
 
@@ -96,11 +95,11 @@ Network has none, so on a laptop run them before you join it:
 ```
 python3 -m venv ~/zedenv
 ~/zedenv/bin/pip install --upgrade pip numpy requests
-~/zedenv/bin/python /usr/local/zed/get_python_api.py
+~/zedenv/bin/python "$(find / -xdev -name get_python_api.py -not -path "$HOME/*" 2>/dev/null | head -1)"
 ~/zedenv/bin/python -c "import pyzed.sl as sl; print(sl.Camera.get_sdk_version())"
 ```
 
-The last line prints the SDK version (5.6.0 on the robot computer). For
+The `find` line locates the script the SDK installed. The last line prints the SDK version (5.6.0 on the robot computer). For
 `--picture`, also `~/zedenv/bin/pip install opencv-python`. On Windows the
 script is in the SDK's install folder (`C:\Program Files (x86)\ZED SDK`).
 
@@ -110,10 +109,10 @@ installed before stops importing (`undefined symbol`): run the
 
 ## No admin rights: the SDK in your own account
 
-Stereolabs' installer puts the SDK in `/usr/local/zed` and needs admin
-rights. Without them (a computer you don't run), unpack it into your own
-home folder instead. Not on the robot computer: it has the shared install,
-and a second SDK in `~/zed` only gets in the way. It takes about 3 GB.
+Stereolabs' installer needs admin rights. Without them (a computer you
+don't run), unpack the SDK into your own home folder instead. Not on the robot
+computer: it has the SDK already, and a second one in `~/zed` only gets in the
+way. It takes about 3 GB.
 
 ```
 # 1. Download the build for your Ubuntu and CUDA from the release page above.
@@ -128,7 +127,7 @@ export ZED_DIR=~/zed
 export LD_LIBRARY_PATH=~/zed/lib:~/zed/dependencies/ai_dependencies/lib:/usr/local/cuda/lib64
 
 # 4. pyzed: the same as "Get pyzed", but point Stereolabs' script at ~/zed
-sed "s#zed_path = \"/usr/local/zed\"#zed_path = os.environ['ZED_DIR']#" \
+sed "s#zed_path = \"[^\"]*\"#zed_path = os.environ['ZED_DIR']#" \
     ~/zed/get_python_api.py > ~/zed/get_python_api_user.py
 python3 -m venv ~/zedenv
 ~/zedenv/bin/pip install --upgrade pip numpy requests
@@ -138,8 +137,8 @@ python3 -m venv ~/zedenv
 
 Every new terminal needs the two `export` lines (step 3) before running your
 program. The first NEURAL depth on a computer prepares the model for a few
-minutes and looks like a hang. If that computer later gets the SDK in
-`/usr/local/zed`, delete `~/zed`, drop the two `export` lines and rerun
+minutes and looks like a hang. If that computer later gets the SDK installed
+for everyone, delete `~/zed`, drop the two `export` lines and rerun
 "Get pyzed".
 
 ## Rules
@@ -172,7 +171,7 @@ and no stream: use `init.set_from_svo_file("episode.svo2")` instead of
 
 | What you see | What it means |
 |---|---|
-| `open` fails with a connection error | The robot or its camera server is off, or you are not on the Robot Network. Open `http://192.168.123.222:8090/`: if the board shows no picture, the camera is down |
+| `open` fails with a connection error | The robot or its camera server is off, or you are not on the Robot Network. Open the lab board ([camera_quickstart.md](camera_quickstart.md) section 1): if it shows no picture, the camera is down |
 | `import pyzed` fails with `undefined symbol` | Your pyzed was built for another SDK version. Rerun the `get_python_api.py` line in "Get pyzed" with your Python. On the robot computer, also remove any `~/zed` `export` lines from `~/.bashrc` |
 | The first `open` on a computer stops at `Looking for its calibration` | The SDK downloads the camera's calibration from Stereolabs the first time on each computer. On a laptop, keep your Wi-Fi up while the wired Robot Network connection is on (leave Router and DNS empty, [camera_quickstart.md](camera_quickstart.md) section 1), then open the stream again. The robot computer already has the file |
 | The first `open` seems to hang for minutes | The SDK is preparing the neural depth model for your card; it only does this the first time |

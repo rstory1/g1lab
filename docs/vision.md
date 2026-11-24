@@ -5,7 +5,7 @@ Train a detector, export it to ONNX, and get back what it found, with a 3-D poin
 each thing.
 
 **Where it runs today.** On `g1lab.mock()`, now: the mock runs your model on your own
-computer, through the robot's own checks, and needs the `vision` extra (onnxruntime;
+computer, through the robot's own checks, and needs the `vision` extra (onnx and onnxruntime;
 [Install](guide.md#install)). Use `g1lab.mock(camera="render")`: each detection gets a 3-D
 point from the render's depth (`r.depth.read()` still raises `NoData` on the mock); with
 the recorded clip `xyz` is `None`. On the robot it is not switched on yet, and `upload()`
