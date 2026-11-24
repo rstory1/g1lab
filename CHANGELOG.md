@@ -3,6 +3,20 @@
 What each release added or fixed. To get the newest, run the install line in the
 [README](README.md) again.
 
+## 0.1.18 (2026-11-24)
+
+Fixed
+- The simulated head camera now tilts down like the real one, about 17 degrees below
+  horizontal (it was about 47). `g1lab.mock(camera="render")` and the simulator's detector
+  both use it, so objects sit where they would in the robot's picture.
+- The Perception module's `MOUNT_RPY` holds the real camera's angles, so its `camera_pose`
+  and `ball_position` agree with the robot's camera.
+
+Changed
+- The mock's red ball moved up into the new view: 18 in in front of the robot, 4 in to its
+  right, 41 in above the floor. The Perception and Vision model modules use that position;
+  their "Try this" ball is now `ball=(0.50, -0.20, 1.10)`.
+
 ## 0.1.17 (2026-11-24)
 
 Fixed

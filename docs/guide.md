@@ -16,7 +16,7 @@ open on the real one.
 Python 3.8 or newer, anywhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.17/g1lab-0.1.17-py3-none-any.whl"
+pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.18/g1lab-0.1.18-py3-none-any.whl"
 ```
 
 That brings `pyzmq`, `msgpack` and `numpy`. Each name in the brackets is an extra;
@@ -37,7 +37,7 @@ shows who has the robot, who is next, and what the robot's camera sees.
 There, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.17-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.18-py3-none-any.whl
 ```
 
 ### Check you are ready
