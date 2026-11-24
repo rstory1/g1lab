@@ -16,7 +16,7 @@ open on the real one.
 Python 3.8 or newer, anywhere with internet (the Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.15/g1lab-0.1.15-py3-none-any.whl"
+pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.16/g1lab-0.1.16-py3-none-any.whl"
 ```
 
 That brings `pyzmq`, `msgpack` and `numpy`. Each name in the brackets is an extra;
@@ -37,7 +37,7 @@ shows who has the robot, who is next, and what the robot's camera sees.
 There, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.15-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.16-py3-none-any.whl
 ```
 
 ### Check you are ready
@@ -174,7 +174,7 @@ From a terminal: `python -m g1lab.record --host 192.168.123.222 --seconds 60
 
 | Call | What you get |
 |---|---|
-| `Recorder(source, out, topics)` | `source` is the robot computer's address, or a connected robot or mock. `out` is a new folder (default `recording_<date>_<time>`). `topics` narrows what is kept; the default is everything but depth and the ZED topics (`depth.image`, `zed.objects`, `zed.bodies`, `zed.pose`), and `g1lab.recording.ALL_TOPICS` adds them. It stops by itself with less than 1 GB left on the disk |
+| `Recorder(source, out, topics)` | `source` is the robot computer's address, or a connected robot or mock. `out` is a new folder (default `recording_<date>_<time>`). `topics` narrows what is kept; the default is everything but depth and the ZED topics (`depth.image`, `zed.objects`, `zed.bodies`, `zed.pose`), and `g1lab.recording.ALL_TOPICS` adds them. The robot's lidar is off, so its `lidar` topic records nothing there. It stops by itself with less than 1 GB left on the disk |
 | `rec.run(seconds)`, `rec.start()`, `rec.stop()`, `rec.counts()` | record for that long (until Ctrl-C with no number); start and stop in the background (`stop()` and `run()` return the Recording); readings so far, per sensor |
 | `run.read(topic, start, end)` | every reading in that time span as `(t, value)` |
 | `run.at(topic, t, max_age)` | the newest reading at or before `t` as `(t, value)`, `None` if none is that recent |
@@ -226,9 +226,10 @@ state timestamps use the same requested frame rate (`--fps`, default 15).
 
 A policy is your network or Python class driving the arms and hands 50 times a
 second. `g1lab.policy` holds the `Policy` class to write one, `NetworkPolicy` to
-load a TorchScript file, and the tools to try it on the mock. You hand
-the operator a folder, and the operator runs it in the simulator, then on the
-robot. See [policy.md](policy.md).
+load a TorchScript file, and the tools to try it on the mock. You send the
+folder with `r.policy.upload()` and trial it in a simulator session with
+`r.policy.trial()`; the operator approves a passing hash and runs it on the robot
+with you. See [policy.md](policy.md).
 
 ## When something goes wrong
 
@@ -260,7 +261,7 @@ A program can ask the robot computer to start what it needs. No session is
 needed for this.
 
 ```python
-r.services.start("sim", wait=120)    # a simulated robot for your program; tens of seconds
+r.services.start("sim", wait=120)    # a simulated robot for your program; returns when it takes programs (about 30 s)
 with r.control() as c:               # then use it as usual
     ...
 r.services.start("llm", wait=120)    # the language model on the robot computer
@@ -271,6 +272,8 @@ print(r.services.status())           # every service: what it is, and whether it
 ```
 
 - **sim** is a simulator session that only ever drives the simulated robot.
+  `start("sim", wait=N)` returns when the session takes programs, or raises "the simulator is
+  still starting: wait a little longer, or start with a larger wait=" (a `g1lab.G1LabError`) when N runs out.
   Only one runs at a time, and never while the real robot is on.
 - **walk** is the same kind of session with the simulated robot walking: see
   [walk_reach_missions.md](walk_reach_missions.md). It and `sim` share

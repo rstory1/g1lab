@@ -3,6 +3,25 @@
 What each release added or fixed. To get the newest, run the install line in the
 [README](README.md) again.
 
+## 0.1.16 (2026-11-23)
+
+Fixed
+- `r.services.start("sim", wait=...)` (and `"walk"`) now returns only when the session takes
+  programs, so `r.control()` works right after it. It used to return about 30 s before that,
+  so a `r.control()` straight after it still had to wait. If `wait` runs out first it raises
+  `g1lab.G1LabError`: "the simulator is still starting: wait a little longer, or start with a
+  larger wait=".
+
+Added
+- `r.policy`: send a policy folder from your own program. `upload(folder)` checks it on the
+  robot computer (the policy loads with no network and no home folders) and returns its hash,
+  kind, inputs and outputs; `trial()` runs it in a simulator session and scores it against
+  the floor, the minimum scores a trial must reach ([docs/policy.md](docs/policy.md));
+  `progress=print` shows each episode as it runs. `status()` and `list()` show the last
+  trial and the operator's approval. While the simulator is still starting, `r.policy` says
+  so instead of telling you to start one. Simulator sessions only: the operator approves a
+  passing hash and runs it on the robot with you.
+
 ## 0.1.15 (2026-11-23)
 
 Fixed

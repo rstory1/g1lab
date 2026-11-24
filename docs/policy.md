@@ -4,8 +4,55 @@ A policy is a network or a Python class that drives the arms and hands 50 times 
 second. It gets the readings it asks for and answers with joint angles. The robot's
 joint limits and collision checks apply to every answer.
 
-You hand the operator a folder, and the operator runs it. There is no way yet to
-send one from your own program.
+You send a folder from your own program and trial it in the simulator; the operator
+approves a passing policy and runs it on the robot with you.
+
+## Send it and trial it
+
+This needs a simulator session (`r.services.start("sim", wait=120)`, which returns once the
+session takes programs; before that, `r.policy` says the simulator is still starting). Give up the robot
+before a trial (no `r.control()` open in any program of yours): the trial drives the
+simulated arms.
+
+```python
+import g1lab
+
+with g1lab.connect("192.168.123.222", name="YOURNAME") as r:
+    info = r.policy.upload("reach")             # the folder with policy.json
+    print(info.hash[:12], info.kind, info.inputs, "->", info.outputs)
+
+    result = r.policy.trial(info, progress=print)   # 5 episodes, scored against the floor
+    print(result)                               # passed or under the floor, and why
+    print(r.policy.status(info).approved)       # None until the operator approves it
+```
+
+`upload` sends the folder's files (up to 100 files and 64 MB; `__pycache__` is left out),
+and the robot computer loads the policy in the same sandbox the operator's check uses: no
+network, no home folders. It returns when the check is done. `info.hash` names these exact
+files: tell the operator the hash, and the operator approves that hash. A changed byte is a
+new hash and starts again.
+
+`trial` returns a `TrialResult`: `passed`, `why` (each number that missed the floor, the minimum scores a trial must reach),
+and `episodes`, `success`, `watchdog_trips`, `refused_share`, `miss_share` and `hz`.
+`progress` gets each line the trial prints, such as `episode 2/5: ran to the end`.
+`r.policy.status(hash)` shows the last trial and the approval; `r.policy.list()` lists the
+policies you sent.
+
+Refusals come as `ServiceRefused` with the reason:
+
+| Says | Fix |
+|---|---|
+| `not a simulator session` | `r.services.start("sim", wait=120)` |
+| `no policy.json` | add it ([below](#a-network-no-code)) |
+| `is a link` | a folder holds real files, not links |
+| `over 64 MB`, `the most is 100` | leave out data and checkpoints the policy does not load |
+| `failed its check` | the message holds the policy's error and what it printed |
+| `a trial is already running` | trials run one at a time; wait for it |
+| `already have 20 policies` | you can keep 20 and no call removes one: `r.policy.list()` shows them; trial one of those |
+
+A policy belongs to the `name=` you connected with: use the same `name=` each run to trial it
+again without uploading, because a different name cannot see it. Approving a policy and running it on the
+robot are not in `r.policy`: those are the operator's.
 
 ## A network: no code
 
@@ -147,9 +194,10 @@ inside them and counted as `clamped`.
 
 ## From your folder to the robot
 
-1. **Simulator trials.** Several episodes, scored against the floor, the minimum scores a trial must reach: how many
-   finished, how many answers were late or refused, and the rate. For now, finishing an
-   episode counts as success; a test for your task comes with the lab's simulator scene.
+1. **Simulator trials** (`r.policy.trial`). Several episodes, scored against the floor, the minimum scores a trial must reach: how many
+   finished, how many answers were late or refused, and the rate. For now, an
+   episode counts as a success when it runs to the end without getting stuck on a late
+   answer. The trial does not check your task itself.
 2. **The operator's approval.** It is for those exact files. **If you change one byte,
    it is a new policy** and starts again at step 1.
 3. **First run on the robot,** standing at the table, at reduced speed, with a spotter.

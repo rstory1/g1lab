@@ -5,7 +5,7 @@
 """Check you can reach the robot: print who has it, the joint names, the
 limits and the home pose. Needs no session.
 
-    python3 info.py --host 192.168.123.222
+    python3 info.py --host 192.168.123.222 --name YOURNAME
 """
 
 import argparse

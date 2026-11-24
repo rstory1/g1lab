@@ -5,7 +5,7 @@
 """Read the robot without moving it: joints, body tilt, the right hand, the
 temperatures and one camera picture. Needs no session.
 
-    python3 sensors.py --host 192.168.123.222 --picture view.jpg
+    python3 sensors.py --host 192.168.123.222 --name YOURNAME --picture view.jpg
 """
 
 import argparse

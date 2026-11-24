@@ -5,7 +5,8 @@ hands to those angles, joint by joint. You control both arms (7 joints each) and
 (7 joints each). The robot keeps its own balance and legs, so you never have
 to think about standing up.
 
-**The same program runs on the simulated robot and the real one.**
+**For now the arms move on the simulated robot, not yet on the real one.** The same
+program will run on the real robot unchanged once the arms open there.
 
 **The easier way: the `g1lab` package** ([guide.md](guide.md)). It keeps
 sending for you, reads the sensors, and names each problem. This guide shows
@@ -13,7 +14,7 @@ the plain messages underneath it, which still work as they are.
 
 ## What you need
 
-- Python 3 and one package: `pip install pyzmq`
+- Python 3 and one package: `pip install pyzmq` (somewhere with internet, before you plug into the Robot Network; installing g1lab already brings it)
 - The **address** of the robot computer (in the lab, `192.168.123.222`) and the **port**, normally `5600`.
 - A **name** for yourself, such as `ana`. Every message carries it, and the operator sees it on screen.
 

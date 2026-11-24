@@ -37,9 +37,11 @@ set `HOST = "192.168.123.222"` and your name in `NAME`, in its first code cell. 
 that moves the arms needs a session the operator has started, or one from
 `r.services.start("sim")`. The ones that only read sensors do not.
 
-The Perception module on the real robot needs a real red ball, about 3 in across. The mock
-and the simulated robot have no depth, so Camera and depth uses made-up points there and
-says so.
+For now the modules that move the arms run on the mock and the simulated robot; the same
+program runs on the real robot unchanged once the arms open there. The modules that only read
+sensors run on the real robot today. Camera and depth needs a real red ball, about 3 in
+across, there: the mock and the simulated robot have no depth, so it uses made-up points
+there and says so.
 
 The Vision model module needs `pip install onnx onnxruntime`, and `ultralytics` for its
 part 3. It runs on the mock only for now: the robot's side is not switched on yet.

@@ -17,7 +17,7 @@ The University of Iowa).
 Python 3.8 or newer, somewhere with internet (the lab's Robot Network has none):
 
 ```
-pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.15/g1lab-0.1.15-py3-none-any.whl"
+pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.16/g1lab-0.1.16-py3-none-any.whl"
 ```
 
 `camera` adds Pillow (camera pictures as arrays), `mock` adds MuJoCo (the laptop
@@ -31,7 +31,7 @@ In the lab, plug into the Robot Network and set your address by hand:
 [section 1 of the camera quickstart](docs/camera_quickstart.md#1-get-on-the-robot-network-and-watch-the-camera).
 
 To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.15-py3-none-any.whl`
+`pip install http://192.168.123.222:8090/g1lab-0.1.16-py3-none-any.whl`
 
 Check you are ready: `python -m g1lab.check --host mock` anywhere, then
 `python -m g1lab.check --name YOURNAME` in the lab. Each line says ok, note or FAIL,
@@ -159,7 +159,7 @@ error and the safety rules: [docs/walk_reach_missions.md](docs/walk_reach_missio
 - [docs/joints_and_messages.md](docs/joints_and_messages.md): which way each joint
   turns, what the robot does to keep everyone safe, and the plain messages under `g1lab`.
 - [docs/policy.md](docs/policy.md): your own network or class driving the arms and
-  hands 50 times a second, tried on the mock, then handed to the operator.
+  hands 50 times a second, sent from your program and trialled in the simulator; the operator approves it and runs it with you.
 - [docs/walk_reach_missions.md](docs/walk_reach_missions.md): walking to a point, the arm
   reach solver, missions, and carrying while walking; [docs/missions.md](docs/missions.md):
   every skill and what each failure means.
