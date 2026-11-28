@@ -7,8 +7,7 @@
 The arm stays up for 20 s (--seconds) while the program just sleeps: g1lab
 keeps the pose held for you. When the program lets go, the arms go home.
 
-    python3 raise_arm.py --host mock --name YOURNAME             # on your laptop
-    python3 raise_arm.py --host 192.168.123.222 --name YOURNAME  # in the lab
+    python3 raise_arm.py      # needs the arm simulator on: see the guide
 """
 
 import argparse
@@ -26,14 +25,12 @@ except ImportError:                     # run from the repo, not installed
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--host", default="localhost", help="the robot computer, or mock")
+    ap.add_argument("--host", default="192.168.123.222", help="the robot computer")
     ap.add_argument("--port", type=int, default=5600)
-    ap.add_argument("--name", default="example")
     ap.add_argument("--seconds", type=float, default=20.0, help="how long to hold the arm up")
     a = ap.parse_args()
 
-    r = (g1lab.mock(name=a.name) if a.host == "mock"     # a laptop, no robot
-         else g1lab.connect(a.host, name=a.name, port=a.port))
+    r = g1lab.connect(a.host, port=a.port)
     arm = r.info().home["right_arm"].copy()
     arm[0] = math.radians(-60)              # shoulder_pitch: raise the arm forward
     arm[3] = math.radians(20)               # elbow

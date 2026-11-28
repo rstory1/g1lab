@@ -7,25 +7,22 @@ Four things your program can do:
 3. [Missions: skills in a row](#3-missions-skills-in-a-row)
 4. [Carry something while walking](#4-carry-something-while-walking)
 
-**Where it runs today.** On your laptop with `g1lab.mock()`, and in the lab in the
-**walking simulator** session, which your program starts itself with
-`r.services.start("walk")`. Walking on the real robot is not open to programs
-yet. Every example below runs on your laptop first, with g1lab installed as in
-[the guide](guide.md#install) (its install line has the `mock` and `missions`
-extras these need).
+**Where it runs today.** In the lab, in the **walking simulator**, which your
+program starts itself with `r.services.start("walk")`. Walking on the real robot is not
+open to programs yet. Install g1lab as in [the guide](guide.md#install) (its install
+line has the `missions` extra these need) and connect to the lab computer on the Robot
+Network.
 
-## Before you start: the walking session
+## Before you start: the walking simulator
 
-A walking session is like the arm session you already know, plus walking.
-You still take your turn with `with r.control() as c:`.
+The walking simulator is like the arm simulator you already know, plus walking.
+You still take the robot with `with r.control() as c:`.
 
 ```python
 import g1lab
 
-r = g1lab.mock(name="YOURNAME", nav="lab")    # laptop: a pretend 8 x 6 m room
-# in the lab:
-#   r = g1lab.connect("192.168.123.222", name="YOURNAME")
-#   r.services.start("walk", wait=300)        # about a minute to start
+r = g1lab.connect()
+r.services.start("walk", wait=300)            # about a minute to start
 print(r.nav.pose())                           # where the robot is on the map
 r.close()
 ```
@@ -34,8 +31,7 @@ r.close()
 (which way it faces) in radians, 0 along the map's x axis and counterclockwise
 positive. On the robot the pose is a guess built from its steps: it slowly goes wrong, so
 check `pose.quality` (`"ok"` or `"degraded"`) and `pose.drift_m` (estimated error, meters) in long
-programs; at 20 in of estimated error it stops coming. To try that on the laptop, use
-`g1lab.mock(nav="lab", robot_pose=True)`. `r.nav.map()` gives the map itself. You can also walk by hand with
+programs; at 20 in of estimated error it stops coming. `r.nav.map()` gives the map itself. You can also walk by hand with
 `c.walk(vx, vy, wz)` (forward, left, turning); each call lasts half a second, so
 call it in a loop or pass `duration=`, and `c.stop()` stops at once.
 
@@ -55,7 +51,8 @@ obstacles it sees. Example: [go_to_basic.py](../examples/go_to_basic.py).
 import math
 import g1lab
 
-r = g1lab.mock(name="YOURNAME", nav="lab")
+r = g1lab.connect()
+r.services.start("walk", wait=300)
 p = r.nav.pose()
 with r.control() as c:
     h = r.nav.go_to(p.x + 1.0, p.y, yaw=0.0)     # 1 m along the map's x axis; waits until done
@@ -71,7 +68,7 @@ What `h.result` means:
 | `"arrived"` | it got within `tolerance` (0.15 m) of the goal | |
 | `"no_path"` | no route on the map, before it moved | the goal is in or near a wall: `go_to` keeps the robot about 18 in from walls and furniture. Pick a goal further out |
 | `"blocked"` | a route closed while walking, or it stopped making headway | clear the way, or pick another goal |
-| `"stopped"` | the safety layer held it still, your turn ended, or the robot's position stopped coming | read `h.reason` |
+| `"stopped"` | the safety layer held it still, you lost the robot, or the robot's position stopped coming | read `h.reason` |
 | `"timeout"`, `"cancelled"` | out of time (`timeout=60`), or you called `h.cancel()` | |
 
 `h.reason` explains any result but `"arrived"`, in words. Every ending stops
@@ -90,7 +87,8 @@ where a small object should be, not the wrist). It gives two poses: the **pre-gr
 import g1lab
 from g1lab.reach import ReachSolver, Unreachable
 
-r = g1lab.mock(name="YOURNAME")
+r = g1lab.connect()
+r.services.start("sim", wait=120)                 # the arm simulator; leave this line out if the walking simulator runs
 solver = ReachSolver.from_info(r.info())          # this robot's own joint limits
 try:
     plan = solver.plan("right", (0.35, -0.15, 0.05))   # x forward, y left, z up from the pelvis (m)
@@ -127,22 +125,20 @@ plans; the robot still checks every pose, so `c.arms.move_to` can raise
 ## 3. Missions: skills in a row
 
 A mission is a short list of skills (`find`, `go_to`, `approach`, `pick`, `place`,
-`drop`, `home`) run one after another, from a YAML file or from Python.
-[mission_basic.py](../examples/mission_basic.py) runs
-[mission_basic.yaml](../examples/mission_basic.yaml) on the mock, in a pretend
-room with a pretend detector. Every skill, every failure code and where missions run:
+`drop`, `home`) run one after another, from a YAML file or from Python. In the lab
+simulator only `go_to` and `home` run so far, because there is no object detector yet. Every skill, every failure code, and a mission to try:
 [Missions: skills in a row](missions.md).
 
 ## 4. Carry something while walking
 
 In the walking simulator the arms and hands are yours too, standing and walking
-(`r.info().arms` is True). On the laptop, `g1lab.mock(nav="lab", arms=True)`
-does the same. Example: [carry_while_walking.py](../examples/carry_while_walking.py).
+(`r.info().features["arms"].on` is True). Example: [carry_while_walking.py](../examples/carry_while_walking.py).
 
 ```python
 import g1lab
 
-r = g1lab.mock(name="YOURNAME", nav="lab", arms=True)
+r = g1lab.connect()
+r.services.start("walk", wait=300)
 p = r.nav.pose()
 with r.control() as c:
     c.arms.move_to(right=[-0.9, 0.1, 0.0, 0.9, 0.0, 0.0, 0.0], duration=3.0)   # arm out
@@ -151,7 +147,7 @@ with r.control() as c:
 r.close()
 ```
 
-The arm rules are the arm session's: joint limits, speed limits, and a pose that
+The arm rules are the same as in the arm simulator: joint limits, speed limits, and a pose that
 would hit the robot is refused. **The arms go home by themselves** when you leave
 the `with` block, when the robot falls, when your program goes quiet for a
 second, and when the connection drops. They do not go home when the robot only

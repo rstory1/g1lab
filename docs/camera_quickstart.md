@@ -1,52 +1,41 @@
 # The robot's camera: see it, save pictures, record
 
 The robot has a camera in its head (a ZED 2i). You can watch it and save its
-pictures from your own laptop. **None of this moves the robot, and you do not
-need a session or a turn:** anyone on the Robot Network can read the camera at
-the same time.
+pictures from your own program on the lab workstation. **None of this moves the
+robot, and you do not need to hold the robot:** every program can read the
+camera at the same time.
 
-## 1. Get on the Robot Network and watch the camera
+## 1. Watch the camera
 
-The Robot Network is a VLAN on the lab's network switch, with no internet. Plug
-your laptop into a Robot Network port on the switch and set the wired connection
-by hand in your network settings:
-
-| | |
-|---|---|
-| IP address | `192.168.123.N`, where N is 130 to 159 and nobody else in the lab is using it |
-| Subnet mask | `255.255.255.0` |
-| Router and DNS | leave empty, so your Wi-Fi keeps your internet |
-
-Then open **http://192.168.123.222:8090/** in a browser: that page is the **lab
-board**, and it shows what the camera sees, about 5 pictures a second. If
-the page does not open, check the cable and those settings. When it
-says **No picture from the camera**, the camera is not sending, and your
-program will get `NoData` too.
+Logged in on the lab workstation, open **http://192.168.123.222:8090/** in its
+browser: that page is the **lab board**, and it shows what the camera sees, about 5
+pictures a second. When it says **No picture from the camera**, the camera is not
+sending, and your program will get `NoData` too.
 
 ## 2. Install `g1lab`
 
-Python 3.8 or newer, somewhere with internet (the Robot Network has none):
+Python 3.8 or newer, in your own account on the lab workstation, in the virtual
+environment the Install section of the README sets up:
 
 ```
-pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.18/g1lab-0.1.18-py3-none-any.whl"
+pip install "g1lab[camera] @ https://github.com/rstory1/g1lab/releases/download/v0.1.20/g1lab-0.1.20-py3-none-any.whl"
 ```
 
 The live window in section 4 also needs OpenCV (about 190 MB): use
 `g1lab[camera,video]` in that line.
 
-To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.18-py3-none-any.whl`
+To update, once installed:
+`pip install http://192.168.123.222:8090/g1lab-0.1.20-py3-none-any.whl`
 
-Then, on the Robot Network, `python -m g1lab.check --name YOURNAME`: one line per
-check with the fix, from your address to whether the camera's stream (port 5601)
-reaches you. Nothing moves.
+Then `python -m g1lab.check`: one line per check with the fix, from your address to
+whether the camera's stream (port 5601) reaches you. Nothing moves.
 
 ## 3. Save one picture
 
 ```python
 import g1lab
 
-r = g1lab.connect("192.168.123.222", name="YOURNAME")  # use your own name
+r = g1lab.connect()
 t, jpeg = r.camera.jpeg()                              # the newest picture, as a JPEG file
 open("view.jpg", "wb").write(jpeg)
 
@@ -63,7 +52,7 @@ Needs OpenCV (section 2).
 import cv2
 import g1lab
 
-r = g1lab.connect("192.168.123.222", name="YOURNAME")
+r = g1lab.connect()
 while True:
     t, img = r.camera.read()
     cv2.imshow("robot camera", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))   # OpenCV wants BGR
@@ -81,7 +70,7 @@ import os, time
 import g1lab
 
 os.makedirs("mugs", exist_ok=True)
-r = g1lab.connect("192.168.123.222", name="YOURNAME")
+r = g1lab.connect()
 for n in range(60):                                    # 60 pictures, 2 a second
     t, jpeg = r.camera.jpeg()
     open(f"mugs/{n:03d}.jpg", "wb").write(jpeg)
@@ -97,14 +86,14 @@ backgrounds make a better dataset than many pictures of one view.
 **Depth is already running on the robot.** The robot's own computer
 works out depth from both camera eyes and sends it out as 3-D points, 5
 times a second. You do not need to compute anything or install anything
-more: like the pictures, it needs no session or turn, and anyone on the
+more: like the pictures, it needs no hold on the robot, and every program on the
 Robot Network can read it.
 
 ```python
 import numpy as np
 import g1lab
 
-r = g1lab.connect("192.168.123.222", name="YOURNAME")  # use your own name
+r = g1lab.connect()
 t, xyz, rgb = r.depth.read()                           # the newest points
 print(len(xyz), "points")                              # up to 20000
 
@@ -126,8 +115,7 @@ np.savez("depth.npz", t=t, xyz=xyz, rgb=rgb)           # keep it for later
   shiny things and anything nearer than 0.3 m can be missing.
 - To get every new set as it arrives instead of asking, use
   `r.on("depth", f)`: it calls `f((t, xyz, rgb))` each time.
-- Depth comes only from the robot: `g1lab.mock()` has none (`r.depth.read()`
-  there raises `NoData`).
+- Depth comes only from the real robot's camera; the simulator sends none.
 
 ## 7. Depth for every pixel, and the ZED's objects, bodies and pose
 
@@ -140,7 +128,7 @@ take the robot computer's graphics card, so they are **off until you ask**:
 import numpy as np
 import g1lab
 
-r = g1lab.connect("192.168.123.222", name="YOURNAME")
+r = g1lab.connect()
 r.services.start("zed", wait=180)           # usually a few seconds, up to a minute the first time
 
 t, depth = r.depth.image(timeout=60)        # float32, 480 x 640, meters; NaN where unmeasured
@@ -163,13 +151,12 @@ r.close()
 prints what the ZED sees once a second:
 
 ```
-python examples/zed_easy.py --host 192.168.123.222 --name YOURNAME
-python examples/zed_easy.py --host 192.168.123.222 --name YOURNAME --seconds 30 --picture seen.jpg
+python examples/zed_easy.py
+python examples/zed_easy.py --seconds 30 --picture seen.jpg
 ```
 
 `--picture` saves the camera picture with the boxes, the skeletons and a few
-distances drawn on it (it needs Pillow, g1lab's `camera` option). With
-`--host mock` it runs too, and says the mock has no ZED.
+distances drawn on it (it needs Pillow, g1lab's `camera` option).
 
 When you are done, `r.services.stop("zed")`; it also stops by itself 10
 minutes after your program stops using it. The card is shared: if it is too
@@ -208,7 +195,6 @@ full `start` says so with the numbers.
   one as it arrives, use `r.on("depth.image", f)`, `r.on("zed.objects", f)`,
   `r.on("zed.bodies", f)` or `r.on("zed.pose", f)`.
 - With no data, each call raises `NoData` and says to start the service.
-  `g1lab.mock()` has none of this: it raises `NoData` too.
 
 **Want the ZED SDK itself?** If you would rather call the ZED's own API (its
 settings, its other detectors, your own depth mode), open the camera's stream
@@ -221,12 +207,12 @@ yourself: [zed_sdk_direct.md](zed_sdk_direct.md).
 - **Up to 15 pictures a second.** The lab board shows fewer; your program gets
   all of them.
 - **`t` is when the camera took the picture**, by the robot's own clock.
-  That clock can be hours off from your laptop's, so use `t` to put pictures
+  That clock can be off from the workstation's, so use `t` to put pictures
   in order or measure time between them, not as the time of day.
 - **Both eyes at full size** are only for computing depth your own way. They
   come from the ZED SDK stream at `192.168.123.164:30000`, which only the ZED
   SDK can open, and the SDK needs an NVIDIA graphics card (the robot
-  computer has one; most laptops do not). Section 7 uses it for you; to use it
+  computer has one). Section 7 uses it for you; to use it
   yourself see [zed_sdk_direct.md](zed_sdk_direct.md).
 
 ## Which pixel is a 3-D point
@@ -239,7 +225,7 @@ picture, in pixels: focal length **352.1**, center **325.3, 234.6**.
 import numpy as np
 import g1lab
 
-r = g1lab.connect("192.168.123.222", name="YOURNAME")
+r = g1lab.connect()
 t, img = r.camera.read()
 t, xyz, rgb = r.depth.read()
 x, y, z = xyz[:, 0], xyz[:, 1], xyz[:, 2]              # forward, left, up, as in section 6
@@ -256,21 +242,14 @@ r.close()
 Going the other way, a pixel `(u, v)` looks along the direction
 `(1, (325.3 - u) / 352.1, (234.6 - v) / 352.1)`: forward, left, up.
 
-## Practice without the robot
-
-`g1lab.mock()` instead of `g1lab.connect(...)` plays a short recorded clip of the
-lab through `r.camera`, so the picture code above runs anywhere, with no network.
-It needs MuJoCo: use `g1lab[camera,mock]` when you install. `g1lab.mock(camera="render")`
-draws a simulated camera view with a red ball instead.
-
 ## If something goes wrong
 
 | What you see | What it means |
 |---|---|
-| The browser cannot open the lab board | Your laptop is not on the Robot Network: see section 1 |
+| The browser cannot open the lab board | The gateway is not running, or the workstation is not on the Robot Network: `python -m g1lab.check` says which |
 | `NoData` after 2 seconds | The camera is not sending; the lab board says "No picture from the camera" |
 | `NoData` from `r.depth.image()` or `r.zed...` | The zed service is not running: `r.services.start("zed")` |
-| `NoData` or `ServiceRefused` from the zed calls while a simulator session runs | The ZED's data comes from the real camera only; in the simulator use `r.camera.read()` |
+| `NoData` or `ServiceRefused` from the zed calls while a simulator runs | The ZED's data comes from the real camera only; in the simulator use `r.camera.read()` |
 | `ServiceRefused` from `start("zed")` | The graphics card is too full right now; the message gives the numbers. Try again later |
 | `r.camera.read() needs Pillow or OpenCV to decode the picture: pip install pillow ...` | Add `camera` to the extras in the install line (section 2): `camera.read()` needs it |
 | Colors look wrong in OpenCV | Convert RGB to BGR, as in section 4 |

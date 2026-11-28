@@ -3,6 +3,79 @@
 What each release added or fixed. To get the newest, run the install line in the
 [README](README.md) again.
 
+## 0.1.20 (2026-11-27)
+
+Changed
+- `r.info()` says what is on. `r.info().robot` is `"off"`, `"sim"` or `"robot"`, and
+  `r.info().features` has one entry for each of `arms`, `walking`, `camera`,
+  `policy_trial` and `teleop`, each with `.on` and `.why`. When a feature is off, `.why` is one
+  sentence saying why and what turns it on. `print(r.info().features)` lists them all. A feature
+  the robot computer cannot tell is left out, not guessed. `r.info().owner` and
+  `r.info().time_left` are there too, so `r.session()` is no longer needed.
+- Refusals say which feature is off and what turns it on, for example "walking is off: the arm
+  simulator is on, and it cannot walk" with the two `r.services` calls that switch simulators.
+  The robot being off reads "the robot is off", with how to turn on the arm simulator.
+- The error for "the robot is off, or this feature is off" is now `g1lab.Off`, with `.feature`
+  set to `"walking"`, `"arms"` and so on, or `None` when the whole robot is off. Catch `Off` where
+  you caught `NoSession` (the old name still works for now). A `walk()` on the arm simulator, and
+  a pose while walking, raise `Off` instead of `Refused`.
+- `g1lab.Ended` reads "the robot was turned off, or your control of it ended".
+- `python -m g1lab.check` prints a `robot` line and a `features` line.
+- The guides, modules and examples describe what is on rather than kinds of run, and the first
+  program prints `r.info().features`.
+
+Works with the 0.1.18 and 0.1.19 clients and the older robot computer: a 0.1.20 program
+against a robot computer that does not send `features` builds them from what it does send, and
+an older program against the new robot computer keeps working.
+
+## 0.1.19 (2026-11-27)
+
+Changed
+- `g1lab.connect()` needs no arguments: it connects to the lab workstation as the account you
+  are logged in with, and `python -m g1lab.check` and the examples need no `--name` any more.
+  There is no waiting line: only one program moves the robot at a time, and a second program's
+  motion commands are refused at once with "the robot is in use by ...". `control()` keeps
+  trying until the robot is free. Reading the sensors and cameras needs no hold. `Busy` has
+  `owner` only, and `info().queue` and the old `r.session().queue` are gone.
+- The examples, the modules and the guides all connect to the lab computer at
+  `192.168.123.222` and run in the lab simulator; the same program runs on the real robot once
+  it is open there. The walking examples start the walking simulator themselves.
+- The camera and ZED pages, the ZED examples and the lab-board notes now assume you work on the
+  lab workstation, where the camera tools are installed.
+- The package is much smaller: about 140 KB in 29 files, down from 15 MB in 114. It has what a
+  program needs to talk to the lab computer and run skills, and no longer carries the robot model
+  or a stand-in robot. `g1lab.mock()` raises "g1lab.mock() is not part of the installed g1lab
+  package"; use `g1lab.connect()`. The `mock` install extra is gone.
+
+Fixed
+- A mission step, a program or `c.arms.home()` that ends with `home` now works in the walking
+  simulator. It used to end with "arms are still 0.65 rad from home after 3 s". The walking
+  simulator now holds the arms at the home pose, so `home`, `c.arms.move_to` and the carrying
+  example all behave as they do in the arm simulator.
+- Asking for the walking simulator while the arm simulator runs, or the reverse, now says
+  which one is running and how to stop it (`r.services.stop("sim")` or `r.services.stop("walk")`),
+  as one sentence with no traceback when your program does not catch it; the program still exits
+  with an error. The same sentence is the message of the `ServiceRefused` you can catch.
+- The Perception module's red ball is in the lab simulator's camera while the robot stands, not
+  only before you take control: the closed-loop part now sees it and points at it. The ball is 28 in
+  in front of the robot's start spot, 4 in to the right and 39 in above the floor.
+- Joints and frames, Inverse kinematics and Perception read the robot's description file from
+  the `notebooks` folder (`g1_29dof_dx3_ros.urdf`, now included there) instead of from inside the
+  package, so open them with Jupyter started in that folder. Joints and frames checks its
+  forward kinematics against MuJoCo using that same file.
+
+Added
+- Mission steps that walk can use your own navigation. `Mission.run(r, planner=...)` gives
+  `go_to` a planner of your own (start from `g1lab.goto.builtin_planner()` and change `step`);
+  `go_to=...` replaces the whole walk. `r.nav.go_to(..., planner=...)` takes the planner too. The
+  walk still goes through the robot's safety layer, and a planner that returns NaN or three numbers
+  of the wrong shape is refused with a message. Nothing changes if you pass neither. Walking runs
+  in the walking simulator only.
+
+Not yet
+- `r.vision` (your own detector), the Vision model module, and the mission steps `find`,
+  `approach`, `pick` and `place` wait for the lab simulator. Only `go_to` and `home` missions run in the walking simulator so far.
+
 ## 0.1.18 (2026-11-24)
 
 Fixed
@@ -20,11 +93,11 @@ Changed
 ## 0.1.17 (2026-11-24)
 
 Fixed
-- `r.session().time_left` was `None` on the first call after `connect()`, even in a live
-  session. The first call now waits up to 2 s for the robot computer's first session update
-  and reports the seconds left. It is still `None` before LIVE and when there is no session.
-- `r.info().backend` said `"robot"` when there was no session, which is not a fact the robot
-  computer has. It is `None` until a session starts, then `"robot"` or `"sim"` (`"mock"` on the mock).
+- `r.session().time_left` was `None` on the first call after `connect()`, even while a program
+  had the robot. The first call now waits up to 2 s for the robot computer's first update
+  and reports the seconds left. It is still `None` before LIVE and when the robot is off.
+- `r.info().backend` said `"robot"` when the robot was off, which is not a fact the robot
+  computer has. It is `None` until the robot is on, then `"robot"` or `"sim"` (`"mock"` on the mock).
 - `pip install "g1lab[vision]"` did not install `onnx`, which the Vision model module needs
   to build its model. The `vision` extra now installs `onnx` and `onnxruntime`.
 
@@ -35,7 +108,7 @@ Docs
 ## 0.1.16 (2026-11-23)
 
 Fixed
-- `r.services.start("sim", wait=...)` (and `"walk"`) now returns only when the session takes
+- `r.services.start("sim", wait=...)` (and `"walk"`) now returns only when the simulator takes
   programs, so `r.control()` works right after it. It used to return about 30 s before that,
   so a `r.control()` straight after it still had to wait. If `wait` runs out first it raises
   `g1lab.G1LabError`: "the simulator is still starting: wait a little longer, or start with a
@@ -44,11 +117,11 @@ Fixed
 Added
 - `r.policy`: send a policy folder from your own program. `upload(folder)` checks it on the
   robot computer (the policy loads with no network and no home folders) and returns its hash,
-  kind, inputs and outputs; `trial()` runs it in a simulator session and scores it against
+  kind, inputs and outputs; `trial()` runs it in the arm simulator and scores it against
   the floor, the minimum scores a trial must reach ([docs/policy.md](docs/policy.md));
   `progress=print` shows each episode as it runs. `status()` and `list()` show the last
   trial and the operator's approval. While the simulator is still starting, `r.policy` says
-  so instead of telling you to start one. Simulator sessions only: the operator approves a
+  so instead of telling you to start one. The arm simulator only: the operator approves a
   passing hash and runs it on the robot with you.
 
 ## 0.1.15 (2026-11-23)
@@ -59,7 +132,7 @@ Fixed
   `AttributeError`. It sets its state in `__init__` too, and the page says why.
 - The refusal you get from `r.vision` on the robot now says what to do: it is not switched
   on there yet, so test your model on `g1lab.mock(camera="render")`.
-- `examples/sensors.py` no longer crashes in a simulator session: the simulator's hands
+- `examples/sensors.py` no longer crashes in a simulator: the simulator's hands
   have no pads (`hand.pads` is `None` there), and it says so.
 - `examples/go_to_basic.py` prints the straight-line distance to the goal, which is what
   "arrived within 0.15 m" measures; `h.remaining_m` is along the planned path and can read more.
@@ -100,7 +173,7 @@ New
   robot. Add `vision` to the extras in the install line. With `camera="render"` the mock
   gives each detection a 3-D point from the render's depth (`r.depth.read()` still raises
   `NoData` on the mock). On the robot it is not switched on yet:
-  [docs/vision.md](docs/vision.md).
+  `docs/vision.md`.
 - The Vision model module (`notebooks/vision_model.ipynb`): a model small enough to read,
   with a post.py; a YOLO export from Ultralytics; two models at once; a refused upload.
 

@@ -11,8 +11,8 @@ never opens the camera itself and cannot move the robot. Does not use g1lab.
     python3 zed_sdk.py --svo episode.svo2 --objects     # a recording, no robot
 
 Needs an NVIDIA graphics card and the ZED SDK 5.x with its Python package
-(pyzed): see docs/zed_sdk_direct.md, "Get pyzed" (any account, laptop or
-robot computer: a venv plus the SDK's get_python_api.py). Depth runs on YOUR card; on the robot computer it shares the card with the
+(pyzed): see docs/zed_sdk_direct.md, "Get pyzed" (a venv plus the SDK's
+get_python_api.py). Depth runs on the workstation's card, which it shares with the
 robot's controller, so keep NEURAL_LIGHT while the robot runs, and stop at once
 if the operator asks. --picture saves the left picture cut to g1lab's 640 x 480
 with the objects drawn on it (needs OpenCV).
@@ -49,7 +49,7 @@ def open_camera(sl, a):
     err = cam.open(init)
     if err != sl.ERROR_CODE.SUCCESS:
         sys.exit(f"cannot open {a.svo or f'{a.host}:{a.port}'} ({err}): is the robot on, "
-                 f"and are you on the Robot Network?")
+                 f"and is its camera server running?")
     if a.objects:
         # Object detection needs positional tracking. The stream sends the IMU too slowly
         # for the SDK's IMU fusion, so track from the pictures alone.
@@ -70,8 +70,7 @@ def save_picture(path, image, objects, w, h):
     try:
         import cv2                                  # the ZED's own samples draw with OpenCV too
     except ImportError:
-        sys.exit("--picture needs OpenCV: install opencv-python in the Python you run this with "
-                 "(the Robot Network has no internet; install it where there is some)")
+        sys.exit("--picture needs OpenCV: pip install opencv-python in the Python you run this with")
     bgra = image.get_data()                         # h x w x 4, blue-green-red-alpha
     cut = (w - h * PIC_W // PIC_H) // 2
     pic = cv2.resize(bgra[:, cut:w - cut, :3], (PIC_W, PIC_H), interpolation=cv2.INTER_AREA)

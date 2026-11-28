@@ -3,16 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Record the head camera to a folder of JPEGs, for labelling or training.
-Needs no session; the robot does not move.
+Works with the robot off; the robot does not move.
 
-    python3 record_camera.py --host 192.168.123.222 --name YOURNAME --seconds 30
-    python3 record_camera.py --host 192.168.123.222 --name YOURNAME --fps 2 --out mugs
-    python3 record_camera.py --host 192.168.123.222 --name YOURNAME --video  # also an MP4
+    python3 record_camera.py --host 192.168.123.222 --seconds 30
+    python3 record_camera.py --host 192.168.123.222 --fps 2 --out mugs
+    python3 record_camera.py --host 192.168.123.222 --video  # also an MP4
 
 Writes <out>/frame_00001.jpg ... and <out>/frames.csv (frame, camera time,
 time saved). Pictures are 640 x 480, the left eye, at most 15 a second.
---video needs OpenCV: add `video` to the extras in the install line (the Robot Network
-itself has no internet, so install it where there is some).
+--video needs OpenCV: add `video` to the extras in the install line.
 """
 
 import argparse
@@ -30,9 +29,8 @@ except ImportError:                     # run from the repo, not installed
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--host", default="localhost", help="the robot computer, or mock")
+    ap.add_argument("--host", default="192.168.123.222", help="the robot computer")
     ap.add_argument("--port", type=int, default=5600)
-    ap.add_argument("--name", default="example")
     ap.add_argument("--out", default=time.strftime("camera_%Y%m%d_%H%M%S"))
     ap.add_argument("--seconds", type=float, default=10.0)
     ap.add_argument("--fps", type=float, default=15.0, help="pictures a second to keep (15 is all)")
@@ -42,12 +40,10 @@ def main():
         try:
             import cv2  # noqa: F401
         except ImportError:
-            sys.exit("--video needs OpenCV: add `video` to the extras in the g1lab install line "
-                 "(the Robot Network has no internet; install it where there is some). "
+            sys.exit("--video needs OpenCV: add `video` to the extras in the g1lab install line. "
                  "The pictures alone do not need it")
 
-    r = (g1lab.mock(name=a.name) if a.host == "mock"
-         else g1lab.connect(a.host, name=a.name, port=a.port))
+    r = g1lab.connect(a.host, port=a.port)
     os.makedirs(a.out, exist_ok=True)
     video = None
     n, last_t, next_keep = 0, None, 0.0

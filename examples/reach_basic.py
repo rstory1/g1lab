@@ -4,9 +4,8 @@
 
 """Plan a right-hand reach to a point in front of the robot; with --move, do it.
 
-    python3 reach_basic.py --host mock --name YOURNAME --move
-    python3 reach_basic.py --host 192.168.123.222 --name YOURNAME --move   # in a lab session
-    python3 reach_basic.py --x 0.9                                         # too far: Unreachable
+    python3 reach_basic.py --move   # needs the arm simulator on: see the guide
+    python3 reach_basic.py --x 0.9                  # too far: Unreachable
 """
 
 import argparse
@@ -15,15 +14,14 @@ import g1lab
 from g1lab.reach import ReachSolver, Unreachable
 
 ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-ap.add_argument("--host", default="mock", help="the robot computer, or mock")
-ap.add_argument("--name", default="example")
+ap.add_argument("--host", default="192.168.123.222", help="the robot computer")
 ap.add_argument("--x", type=float, default=0.35, help="m forward of the pelvis")
 ap.add_argument("--y", type=float, default=-0.15, help="m to the left (negative: right)")
 ap.add_argument("--z", type=float, default=0.05, help="m up from the pelvis")
 ap.add_argument("--move", action="store_true", help="move the arm there, not only plan")
 a = ap.parse_args()
 
-r = g1lab.mock(name=a.name) if a.host == "mock" else g1lab.connect(a.host, name=a.name)
+r = g1lab.connect(a.host)
 solver = ReachSolver.from_info(r.info())            # uses this robot's own joint limits
 try:
     plan = solver.plan("right", (a.x, a.y, a.z))    # the hand's grasp center on the point

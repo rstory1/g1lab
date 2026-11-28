@@ -11,7 +11,6 @@ and runs from top to bottom, so read it, run it, and copy what you need.
 | `recording_a_dataset.ipynb` | record the sensors to a folder, read them back, line them up by time |
 | `services_and_language_model.ipynb` | start and stop a service, handle a refusal, ask the language model, test a program that acts on its answer |
 | `refusals_and_errors.ipynb` | what each error means, `set` and `move_to` when a pose is refused, the shape of a program that handles them |
-| `vision_model.ipynb` | run your own detector with `r.vision`: build a small model, export a YOLO one, read boxes and 3-D points, and see why an upload is refused |
 
 **Moving the arms**, best read in this order, since each uses the one before:
 
@@ -24,24 +23,24 @@ and runs from top to bottom, so read it, run it, and copy what you need.
 
 ## Run one
 
-Install `g1lab` as the [README](../README.md) says, with `camera,mock`, then (run the pip
-lines somewhere with internet, before you plug into the Robot Network, which has none):
+Install `g1lab` as the [README](../README.md) says, in your own account on the lab
+workstation (you log in with your university ID), then:
 
 ```
-pip install jupyter matplotlib
+pip install jupyter matplotlib mujoco        # mujoco is for Joints and frames only
+cd notebooks
 jupyter notebook camera_and_depth.ipynb
 ```
 
-Each notebook starts on the mock, the robot on your laptop. To run one in the lab,
-set `HOST = "192.168.123.222"` and your name in `NAME`, in its first code cell. A module
-that moves the arms needs a session the operator has started, or one from
-`r.services.start("sim")`. The ones that only read sensors do not.
+Start Jupyter in this folder: Joints and frames, Inverse kinematics and Perception read
+`g1_29dof_dx3_ros.urdf`, the robot's description file, from the folder they are in.
 
-For now the modules that move the arms run on the mock and the simulated robot; the same
-program runs on the real robot unchanged once the arms open there. The modules that only read
-sensors run on the real robot today. Camera and depth needs a real red ball, about 3 in
-across, there: the mock and the simulated robot have no depth, so it uses made-up points
-there and says so.
+Each notebook connects to the lab workstation at `192.168.123.222`. A module that moves the
+arms needs the robot on: turn the arm simulator on with `r.services.start("sim")`.
+`print(r.info().features)` says what is on.
+The ones that only read sensors do not.
 
-The Vision model module needs `pip install onnx onnxruntime`, and `ultralytics` for its
-part 3. It runs on the mock only for now: the robot's side is not switched on yet.
+For now the modules that move the arms run on the lab simulator; the same program runs on
+the real robot unchanged once the arms open there. The modules that only read sensors run
+on the real robot today. Camera and depth needs a real red ball, about 3 in across, there:
+the lab simulator has no depth, so it uses made-up points there and says so.

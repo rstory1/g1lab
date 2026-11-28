@@ -24,7 +24,7 @@ init.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Z_UP_X_FWD   # x forw
 
 cam = sl.Camera()
 if cam.open(init) != sl.ERROR_CODE.SUCCESS:
-    raise SystemExit("cannot open the stream: is the robot on, and are you on the Robot Network?")
+    raise SystemExit("cannot open the stream: is the robot on, and is its camera server running?")
 
 image, depth = sl.Mat(), sl.Mat()
 rt = sl.RuntimeParameters()
@@ -70,27 +70,18 @@ camera. Two things differ from the 640 x 480 picture of `r.camera.read()`:
 
 ## Where it can run
 
-It needs an **NVIDIA graphics card** and the **ZED SDK**. Use **version 5.x**:
-the robot's camera server runs SDK 5.0.7, and a stream is safest opened by the
-same major version. SDK 5.6 opens it, with depth, objects, bodies and
-tracking.
-
-- **Your laptop, if it has an NVIDIA GPU.** Install the ZED SDK for your
-  system from <https://www.stereolabs.com/developers/release> (pick the
-  build that matches your CUDA), plug into the Robot Network as in
-  [camera_quickstart.md](camera_quickstart.md) section 1, then get pyzed as
-  below. The H.265 stream takes a few Mbit/s.
-- **The robot computer in the lab.** The ZED SDK is already installed there for
-  everyone, so you only need pyzed in your own Python (below). Nothing else to set:
-  no `export` lines.
+It needs an **NVIDIA graphics card** and the **ZED SDK**. The lab workstation has
+both: the SDK (version 5.6) is installed for every account, so you only need pyzed in
+your own Python (below). Nothing else to set: no `export` lines. The robot's camera
+server runs SDK 5.0.7; SDK 5.6 opens its stream, with depth, objects, bodies and
+tracking. The H.265 stream takes a few Mbit/s.
 
 ## Get pyzed
 
 pyzed is the SDK's Python package. Stereolabs' script installs it into
-whichever Python runs it, so make your own environment and run it from there
-(the same on the robot computer and on a laptop). The `pip` line and the script download
-files. The robot computer has internet, so there they work as shown. The Robot
-Network has none, so on a laptop run them before you join it:
+whichever Python runs it, so make your own environment and run it from there.
+The `pip` line and the script download files; the workstation has internet, so
+they work as shown:
 
 ```
 python3 -m venv ~/zedenv
@@ -99,56 +90,20 @@ python3 -m venv ~/zedenv
 ~/zedenv/bin/python -c "import pyzed.sl as sl; print(sl.Camera.get_sdk_version())"
 ```
 
-The `find` line locates the script the SDK installed. The last line prints the SDK version (5.6.0 on the robot computer). For
-`--picture`, also `~/zedenv/bin/pip install opencv-python`. On Windows the
-script is in the SDK's install folder (`C:\Program Files (x86)\ZED SDK`).
+The `find` line locates the script the SDK installed. The last line prints the SDK version (5.6.0). For
+`--picture`, also `~/zedenv/bin/pip install opencv-python`.
 
 pyzed is built for one SDK version. When the SDK on a computer changes, a pyzed
 installed before stops importing (`undefined symbol`): run the
 `get_python_api.py` line again with the same Python.
-
-## No admin rights: the SDK in your own account
-
-Stereolabs' installer needs admin rights. Without them (a computer you
-don't run), unpack the SDK into your own home folder instead. Not on the robot
-computer: it has the SDK already, and a second one in `~/zed` only gets in the
-way. It takes about 3 GB.
-
-```
-# 1. Download the build for your Ubuntu and CUDA from the release page above.
-#    For example, for Ubuntu 24, CUDA 13, TensorRT 11:
-wget -O ~/zed_sdk.run https://download.stereolabs.com/zedsdk/5.6/cu13_trt11/ubuntu24
-
-# 2. Unpack it into ~/zed without running the installer (no admin rights)
-sh ~/zed_sdk.run --nox11 --noexec --target ~/zed
-
-# 3. Tell programs where it is (add these lines to ~/.bashrc to keep them)
-export ZED_DIR=~/zed
-export LD_LIBRARY_PATH=~/zed/lib:~/zed/dependencies/ai_dependencies/lib:/usr/local/cuda/lib64
-
-# 4. pyzed: the same as "Get pyzed", but point Stereolabs' script at ~/zed
-sed "s#zed_path = \"[^\"]*\"#zed_path = os.environ['ZED_DIR']#" \
-    ~/zed/get_python_api.py > ~/zed/get_python_api_user.py
-python3 -m venv ~/zedenv
-~/zedenv/bin/pip install --upgrade pip numpy requests
-~/zedenv/bin/python ~/zed/get_python_api_user.py
-~/zedenv/bin/python -c "import pyzed.sl as sl; print(sl.Camera.get_sdk_version())"
-```
-
-Every new terminal needs the two `export` lines (step 3) before running your
-program. The first NEURAL depth on a computer prepares the model for a few
-minutes and looks like a hang. If that computer later gets the SDK installed
-for everyone, delete `~/zed`, drop the two `export` lines and rerun
-"Get pyzed".
 
 ## Rules
 
 1. **Never open the camera itself.** Only the robot's camera server does. Open
    the stream, as above. A program that tries the camera directly gets nothing
    and can get in the way of the others.
-2. **Your program computes its own depth, on its own graphics card.** On your
-   laptop that is your own business. **On the robot computer it sits outside the
-   robot computer's graphics-card check:** that check keeps room for the robot's
+2. **Your program computes its own depth, on the workstation's graphics card.**
+   **It sits outside the graphics-card check:** that check keeps room for the robot's
    controller when you use `r.services.start(...)`, and it does not know your program
    is there. The robot's controller shares that card, so a neural depth running
    next to it can slow it. **If the operator asks you to stop, stop at once.**
@@ -163,7 +118,7 @@ for everyone, delete `~/zed`, drop the two `export` lines and rerun
 ## Practice without the robot
 
 An **SVO2 file** is the ZED SDK's own recording (both eyes and the IMU).
-You can play one back with the same SDK on any NVIDIA computer, with no robot
+You can play one back with the same SDK, with no robot
 and no stream: use `init.set_from_svo_file("episode.svo2")` instead of
 `set_from_stream`. `examples/zed_sdk.py --svo` does this.
 
@@ -171,9 +126,9 @@ and no stream: use `init.set_from_svo_file("episode.svo2")` instead of
 
 | What you see | What it means |
 |---|---|
-| `open` fails with a connection error | The robot or its camera server is off, or you are not on the Robot Network. Open the lab board ([camera_quickstart.md](camera_quickstart.md) section 1): if it shows no picture, the camera is down |
-| `import pyzed` fails with `undefined symbol` | Your pyzed was built for another SDK version. Rerun the `get_python_api.py` line in "Get pyzed" with your Python. On the robot computer, also remove any `~/zed` `export` lines from `~/.bashrc` |
-| The first `open` on a computer stops at `Looking for its calibration` | The SDK downloads the camera's calibration from Stereolabs the first time on each computer. On a laptop, keep your Wi-Fi up while the wired Robot Network connection is on (leave Router and DNS empty, [camera_quickstart.md](camera_quickstart.md) section 1), then open the stream again. The robot computer already has the file |
+| `open` fails with a connection error | The robot or its camera server is off. Open the lab board ([camera_quickstart.md](camera_quickstart.md) section 1): if it shows no picture, the camera is down |
+| `import pyzed` fails with `undefined symbol` | Your pyzed was built for another SDK version. Rerun the `get_python_api.py` line in "Get pyzed" with your Python |
+| The first `open` on a computer stops at `Looking for its calibration` | The SDK downloads the camera's calibration from Stereolabs the first time. The workstation already has the file, so this should not happen there |
 | The first `open` seems to hang for minutes | The SDK is preparing the neural depth model for your card; it only does this the first time |
 | `CAMERA NOT INITIALIZED` after it worked | The stream broke (the robot restarted): `cam.close()`, wait a second, and open again. An `open` straight after a `close` fails |
 | `enable_positional_tracking` says `HIGH FREQUENCY SENSORS DATA REQUIRED` | The stream carries the IMU at the picture's rate only (30 Hz), too slow for the SDK's IMU fusion. Set `enable_imu_fusion = False` in `PositionalTrackingParameters`; tracking then runs from the pictures |

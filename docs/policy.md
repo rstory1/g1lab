@@ -9,15 +9,15 @@ approves a passing policy and runs it on the robot with you.
 
 ## Send it and trial it
 
-This needs a simulator session (`r.services.start("sim", wait=120)`, which returns once the
-session takes programs; before that, `r.policy` says the simulator is still starting). Give up the robot
+This needs the arm simulator (`r.services.start("sim", wait=120)`, which returns once the
+simulator takes programs; before that, `r.policy` says the simulator is still starting). Give up the robot
 before a trial (no `r.control()` open in any program of yours): the trial drives the
 simulated arms.
 
 ```python
 import g1lab
 
-with g1lab.connect("192.168.123.222", name="YOURNAME") as r:
+with g1lab.connect() as r:
     info = r.policy.upload("reach")             # the folder with policy.json
     print(info.hash[:12], info.kind, info.inputs, "->", info.outputs)
 
@@ -42,7 +42,7 @@ Refusals come as `ServiceRefused` with the reason:
 
 | Says | Fix |
 |---|---|
-| `not a simulator session` | `r.services.start("sim", wait=120)` |
+| `policy trials are off: ... this is not the simulator` | `r.services.start("sim", wait=120)` |
 | `no policy.json` | add it ([below](#a-network-no-code)) |
 | `is a link` | a folder holds real files, not links |
 | `over 64 MB`, `the most is 100` | leave out data and checkpoints the policy does not load |
@@ -50,8 +50,8 @@ Refusals come as `ServiceRefused` with the reason:
 | `a trial is already running` | trials run one at a time; wait for it |
 | `already have 20 policies` | you can keep 20 and no call removes one: `r.policy.list()` shows them; trial one of those |
 
-A policy belongs to the `name=` you connected with: use the same `name=` each run to trial it
-again without uploading, because a different name cannot see it. Approving a policy and running it on the
+A policy belongs to the login account you run under: use the same account each run to trial it
+again without uploading, because another account cannot see it. Approving a policy and running it on the
 robot are not in `r.policy`: those are the operator's.
 
 ## A network: no code
@@ -67,7 +67,7 @@ Put your exported network in a folder with a `policy.json`:
 ```
 
 `file` is a TorchScript file (`.pt`, `.ts`). An ONNX file (`.onnx`) loads in
-`NetworkPolicy` on your laptop with `onnxruntime` installed, but the lab cannot run one
+`NetworkPolicy` in your own account with `onnxruntime` installed, but the lab cannot run one
 yet, so export TorchScript for the lab. A checkpoint of
 weights alone has no network in it, so export it first, or load it from a class (below):
 
@@ -169,8 +169,8 @@ Each has one more leading dimension when it reaches `act()`, the batch.
 The names are the same in the simulator and on the robot. A policy that asks for an input
 this robot does not have is refused before anything moves.
 
-**The simulator has no touch pads yet.** `right_pads` and `left_pads` read zero there and on
-the mock, and your trial says so. A policy that depends on touch is not tested by its trial.
+**The simulator has no touch pads yet.** `right_pads` and `left_pads` read zero there,
+and your trial says so. A policy that depends on touch is not tested by its trial.
 
 ## Outputs
 
@@ -221,10 +221,10 @@ The numbers, with the floor's values for now (the operator may change them):
 | `max_miss_share` | 0.05 | share of requests answered later than 40 ms |
 | `min_hz` | 40 | outputs a second, averaged over the trial |
 
-## Trying it without the robot
+## Trying it in your own program
 
-`g1lab.mock()` gives the same readings, limits and refusals. This runs your class in your own
-program, with no sandbox and no 40 ms limit:
+Connected to the lab simulator, your program gets the same readings, limits and refusals as the
+trial. This runs your class in your own program, with no sandbox and no 40 ms limit:
 
 ```python
 import g1lab, time
@@ -232,14 +232,16 @@ from g1lab import policy
 
 p = Reach()
 p.reset()
-with g1lab.mock(name="YOURNAME") as r, r.control() as c:
-    t0 = time.monotonic()
-    while time.monotonic() - t0 < 5:
-        t = time.monotonic() - t0
-        obs = policy.observe(r, p.inputs, t=t, timeout=1.0)
-        action = policy.check_action(p.act(policy.batch(obs)), p.outputs)
-        c.arms.set(right=action["right_arm"])
-        time.sleep(1 / 50)
+with g1lab.connect() as r:
+    r.services.start("sim", wait=120)
+    with r.control() as c:
+        t0 = time.monotonic()
+        while time.monotonic() - t0 < 5:
+            t = time.monotonic() - t0
+            obs = policy.observe(r, p.inputs, t=t, timeout=1.0)
+            action = policy.check_action(p.act(policy.batch(obs)), p.outputs)
+            c.arms.set(right=action["right_arm"])
+            time.sleep(1 / 50)
 ```
 
 `NetworkPolicy` loads the same files outside a folder, so you can test a network first:

@@ -3,17 +3,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """The ZED's depth image, objects, people and pose, the easy way: through g1lab,
-with nothing else to install. Needs no session; the robot does not move.
+with nothing else to install. Works with the robot off; the robot does not move.
 
-    python3 zed_easy.py --host 192.168.123.222 --name YOURNAME
-    python3 zed_easy.py --host 192.168.123.222 --name YOURNAME --seconds 30 --picture seen.jpg
+    python3 zed_easy.py --host 192.168.123.222
+    python3 zed_easy.py --host 192.168.123.222 --seconds 30 --picture seen.jpg
 
 Starts the zed service on the robot computer (usually a few seconds, up to a minute
 the first time), then once a second
 prints what the ZED sees. --picture saves the camera picture with the boxes,
 the skeletons and a few distances drawn on it (needs Pillow: g1lab's `camera`
 option). The service stops by itself when nobody uses it.
-The mock has no ZED: there it says so and stops.
 """
 
 import argparse
@@ -65,8 +64,7 @@ def save_picture(r, path):
     try:
         from PIL import Image, ImageDraw
     except ImportError:
-        sys.exit("--picture needs Pillow: add `camera` to the extras in the g1lab install line "
-                 "(the Robot Network has no internet; install it where there is some)")
+        sys.exit("--picture needs Pillow: add `camera` to the extras in the g1lab install line")
     import io
     _, jpeg = r.camera.jpeg()
     _, depth = r.depth.image()
@@ -92,20 +90,17 @@ def save_picture(r, path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--host", default="localhost", help="the robot computer, or mock")
+    ap.add_argument("--host", default="192.168.123.222", help="the robot computer")
     ap.add_argument("--port", type=int, default=5600)
-    ap.add_argument("--name", default="example")
     ap.add_argument("--seconds", type=float, default=10.0)
     ap.add_argument("--picture", help="save the picture with what the ZED found drawn on it (JPEG or PNG)")
     a = ap.parse_args()
 
-    r = (g1lab.mock(name=a.name) if a.host == "mock"
-         else g1lab.connect(a.host, name=a.name, port=a.port))
+    r = g1lab.connect(a.host, port=a.port)
     try:
         print("starting the zed service ...")
         r.services.start("zed", wait=180)            # usually a few seconds, up to a minute the first time
-        if a.host != "mock":                         # (the mock never has any: no point waiting)
-            r.depth.image(timeout=60)                # "running" comes a few seconds before the first data
+        r.depth.image(timeout=60)                    # "running" comes a few seconds before the first data
         end = time.time() + a.seconds
         while True:
             report(r)

@@ -6,38 +6,34 @@ depth and lidar; walk it to a point on a map, plan an arm reach and run missions
 the walking simulator. The robot keeps its own balance; your program never drives the
 legs' joints.
 
-The same program runs on your laptop with no robot (`g1lab.mock()` refuses what
-the robot refuses), on the simulated robot in the lab, and, unchanged, on the real
-robot once it opens.
+Your program runs on the lab workstation, where you log in with your university ID. It
+drives the simulated robot in the lab and, unchanged, the real robot once it opens.
 `g1lab` is the student package of the G1 Lab (Department of Mechanical Engineering,
 The University of Iowa).
 
 ## Install
 
-Python 3.8 or newer, somewhere with internet (the lab's Robot Network has none):
+Python 3.8 or newer. Install g1lab into your own account on the lab workstation, in a
+virtual environment:
 
 ```
-pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.18/g1lab-0.1.18-py3-none-any.whl"
+python3 -m venv ~/g1lab-env && . ~/g1lab-env/bin/activate
+pip install "g1lab[camera,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.20/g1lab-0.1.20-py3-none-any.whl"
 ```
 
-`camera` adds Pillow (camera pictures as arrays), `mock` adds MuJoCo (the laptop
-robot) and `missions` adds PyYAML (mission files); leave out what you do not need.
-Add `video` for OpenCV's live window and video files, about 190 MB more,
-`export` for turning recordings into a training set, and `vision` to run your own
-detector on the mock ([docs/vision.md](docs/vision.md)). Every extra and what needs it:
+`camera` adds Pillow (camera pictures as arrays) and `missions` adds PyYAML (mission
+files); leave out what you do not need. Add `video` for OpenCV's live window and video
+files, about 190 MB more, and `export` for turning recordings into a training set. Every
+extra and what needs it:
 [docs/guide.md](docs/guide.md#install).
 
-In the lab, plug into the Robot Network and set your address by hand:
-[section 1 of the camera quickstart](docs/camera_quickstart.md#1-get-on-the-robot-network-and-watch-the-camera).
+To update, once installed:
+`pip install http://192.168.123.222:8090/g1lab-0.1.20-py3-none-any.whl`
 
-To update in the lab, once installed:
-`pip install http://192.168.123.222:8090/g1lab-0.1.18-py3-none-any.whl`
-
-Check you are ready: `python -m g1lab.check --host mock` anywhere, then
-`python -m g1lab.check --name YOURNAME` in the lab. Each line says ok, note or FAIL,
-with the fix: your Python and packages, the mock robot, your address, whether the lab
-board serves the same g1lab as yours, the robot computer's ports 5600 and 5601, and the
-session. It only reads; nothing moves.
+Check you are ready: `python -m g1lab.check`. Each
+line says ok, note or FAIL, with the fix: your Python and packages, your address,
+whether the lab board serves the same g1lab as yours, the robot computer's ports 5600 and
+5601, and whether the robot is on and which features are. It only reads; nothing moves.
 
 ## A first program
 
@@ -46,14 +42,16 @@ import math
 import time
 import g1lab
 
-r = g1lab.mock()                                   # in the lab: g1lab.connect("192.168.123.222", name="YOURNAME")
+r = g1lab.connect()                            # the lab workstation, as the account you are logged in with
+r.services.start("sim", wait=120)                      # the simulated robot; about 30 s the first time
+print(r.info().features)                           # what is on now, and what turns the rest on
 home = r.info().home                               # the robot's standing pose
 
 arm = home["right_arm"].copy()
 arm[0] = math.radians(-60)                         # shoulder_pitch: raise the arm forward
 arm[3] = math.radians(20)                          # elbow
 
-with r.control() as c:                             # waits for your turn
+with r.control() as c:                             # waits until nobody else is moving the robot
     c.arms.move_to(right=arm, duration=2.0)        # smoothly, over 2 s
     c.hands.close("right")
     time.sleep(5)                                  # the arm stays up: g1lab keeps sending
@@ -63,7 +61,7 @@ r.close()
 
 ## What you can call
 
-`help()` on any of these says more. Reading works any time, without a turn.
+`help()` on any of these says more. Reading works any time, also while another program moves the robot.
 
 | Read | Gives |
 |---|---|
@@ -73,12 +71,11 @@ r.close()
 | `r.hands.state("right")` | `.q`, `.pads` (touch, named by `.pad_names`; `None` in the simulator), `.temp` |
 | `r.camera.read()`, `r.camera.jpeg()` | `(t, picture)` as an RGB array or JPEG bytes |
 | `r.depth.read()` | `(t, xyz, rgb)` 3-D points from the camera; robot only |
-| `r.lidar.read()` | `.points()`: the lidar's points. The walking mock and the walking simulator give a flat scan; the robot's 3-D lidar is not switched on yet |
+| `r.lidar.read()` | `.points()`: the lidar's points. The walking simulator gives a flat scan; the robot's 3-D lidar is not switched on yet |
 | `r.lidar.imu()` | `.stamp`, `.gyro`, `.acc`: the lidar's own IMU; not switched on yet |
 | `r.state.tf()` | where the lidar and camera sit on the body; not switched on yet |
 | `r.on("joints", f)` | calls `f(value)` on each new reading; returns a function that stops it |
-| `r.info()` | `.home`, `.limits`, `.groups`, `.owner`, `.queue` |
-| `r.session()` | `.phase`, `.owner`, `.queue`, `.time_left` |
+| `r.info()` | `.robot` (`"off"`, `"sim"` or `"robot"`), `.features` (each with `.on` and `.why`), `.home`, `.limits`, `.groups`, `.owner`, `.time_left` |
 | `r.health()` | which feeds are live |
 
 | Move, inside `with r.control() as c:` | Does |
@@ -92,25 +89,29 @@ r.close()
 
 An arm is 7 angles in this order: shoulder pitch, roll, yaw, elbow, wrist roll,
 pitch, yaw. Errors you can catch: `g1lab.Refused` (that pose is not allowed),
-`Busy` (someone else has the robot), `NoSession`, `NoData` (that sensor is not
-sending), `Disconnected`, `Ended` (your session is over).
+`Busy` (someone else has the robot), `Off` (the robot is off, or the feature the call
+needs is off; `err.feature` names it), `NoData` (that sensor is not sending),
+`Disconnected`, `Ended` (the robot was turned off, or your control of it ended).
 
-`r.services.start("sim")` asks the robot computer for a simulated robot.
+`r.services.start("sim")` turns the arm simulator on; a program that moves the arms needs
+it, or the real robot. Walking needs the walking simulator, `r.services.start("walk")`.
+`print(r.info().features)` says what is on now and, for each feature that is off, what
+turns it on.
 
 `r.ask("your question")` returns the language model's answer as text; it runs on the
 robot computer and is refused while the real robot runs. The first question can take a
-minute. On the mock it answers with a line saying there is no model.
+minute.
 
 ## Record a dataset
 
 Saves the sensors to a folder and reads them back on one clock, so each camera picture
-pairs with the right joints. It only listens, so it needs no turn and the robot does
+pairs with the right joints. It only listens, so it needs no hold on the robot and the robot does
 not move. About 1.5 MB a second without depth.
 
 ```python
 import g1lab
 
-with g1lab.connect("192.168.123.222", name="YOURNAME") as r:
+with g1lab.connect() as r:
     rec = g1lab.Recorder(r, "run1").run(60)        # 60 s
 
 print(rec)                                         # what it got, and any gaps
@@ -119,7 +120,7 @@ for t, picture in rec.read("camera"):
 ```
 
 Or with no program: `python -m g1lab.record --host 192.168.123.222 --seconds 60 --out run1`
-(`--host mock` records the mock's joints on a laptop). Add `--depth` for depth, and
+Add `--depth` for depth, and
 `python -m g1lab.record show run1` to see what is in a recording.
 
 Recordings become a LeRobot training set, one folder per demo, with your own rule
@@ -134,12 +135,13 @@ python -m g1lab.export run1 run2 run3 --out pick --task "pick up the cube" --suc
 ## Walk, reach and run missions
 
 In the lab these run in the walking simulator, which your program starts with
-`r.services.start("walk")`; not on the real robot yet. On a laptop:
+`r.services.start("walk")`; not on the real robot yet.
 
 ```python
 import g1lab
 
-r = g1lab.mock(name="YOURNAME", nav="lab")       # a pretend room; arms=True lets the arms carry too
+r = g1lab.connect()
+r.services.start("walk", wait=300)               # about a minute to start; the arms are yours too
 p = r.nav.pose()                                 # x, y (m), yaw (rad) on the map
 with r.control() as c:
     h = r.nav.go_to(p.x + 1.0, p.y, yaw=0.0)     # plan a route and walk it
@@ -148,13 +150,13 @@ r.close()
 ```
 
 `g1lab.reach` plans the right arm onto a point (`Unreachable` says why it cannot), and
-`g1lab.mission` runs skills in a row (find, approach, pick, ...) from Python or a YAML
-file. Every result, every
+`g1lab.mission` runs skills in a row from Python or a YAML file; in the walking simulator
+the `go_to` and `home` steps run, and the ones that need a detector wait for one. Every result, every
 error and the safety rules: [docs/walk_reach_missions.md](docs/walk_reach_missions.md).
 
 ## More
 
-- [docs/guide.md](docs/guide.md): every call, what each error means, the mock, the
+- [docs/guide.md](docs/guide.md): every call, what each error means, the
   language model, recording.
 - [docs/joints_and_messages.md](docs/joints_and_messages.md): which way each joint
   turns, what the robot does to keep everyone safe, and the plain messages under `g1lab`.
@@ -172,13 +174,12 @@ error and the safety rules: [docs/walk_reach_missions.md](docs/walk_reach_missio
   `record_camera.py`, `record_dataset.py`, `zed_easy.py` (the ZED's depth image, objects,
   people and pose), `zed_sdk.py` (the ZED SDK yourself, see
   [docs/zed_sdk_direct.md](docs/zed_sdk_direct.md)), `go_to_basic.py`,
-  `reach_basic.py`, `mission_basic.py` (with `mission_basic.yaml`) and
-  `carry_while_walking.py`. Each but `zed_sdk.py` runs with no robot:
-  `python examples/wave.py --host mock --name YOURNAME`
+  `reach_basic.py` and `carry_while_walking.py`. Each connects to the lab workstation;
+  `--host` points it elsewhere: `python examples/wave.py --host ADDRESS`
 - What changed in each release: [CHANGELOG.md](CHANGELOG.md).
 
 ## Licence
 
-`g1lab` is under the Apache License 2.0 ([LICENSE](LICENSE)). The wheel also carries
-the Unitree G1 robot model and meshes, under their own terms: see
+`g1lab` is under the Apache License 2.0 ([LICENSE](LICENSE)). The `notebooks/` folder also
+holds Unitree's G1 robot description file, under its own terms: see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

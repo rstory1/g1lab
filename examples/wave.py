@@ -7,8 +7,7 @@
 It runs for 30 s (--seconds). To make your own motion, copy it and change
 `pose_at`, which gives the joint angles for each moment.
 
-    python3 wave.py --host mock --name YOURNAME             # on your laptop
-    python3 wave.py --host 192.168.123.222 --name YOURNAME  # in the lab
+    python3 wave.py      # needs the arm simulator on: see the guide
 """
 
 import argparse
@@ -36,16 +35,14 @@ def pose_at(t, home):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--host", default="localhost", help="the robot computer, or mock")
+    ap.add_argument("--host", default="192.168.123.222", help="the robot computer")
     ap.add_argument("--port", type=int, default=5600)
-    ap.add_argument("--name", default="example")
     ap.add_argument("--seconds", type=float, default=30.0)
     a = ap.parse_args()
 
-    r = (g1lab.mock(name=a.name) if a.host == "mock"     # a laptop, no robot
-         else g1lab.connect(a.host, name=a.name, port=a.port))
+    r = g1lab.connect(a.host, port=a.port)
     home = r.info().home
-    with r.control() as c:                  # waits for your turn; the arms ease into home first
+    with r.control() as c:                  # waits until the robot is free; the arms ease into home first
         print("the robot is following you")
         right_arm, _ = pose_at(0.0, home)
         c.arms.move_to(right=right_arm, duration=2.0)       # no jump to the first pose

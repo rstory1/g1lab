@@ -13,10 +13,12 @@ open on the real one.
 
 ## Install
 
-Python 3.8 or newer, anywhere with internet (the Robot Network has none):
+Python 3.8 or newer. You run your programs logged in on the lab workstation with your university ID, and
+g1lab is installed in your own account there, from the wheel (a virtual environment keeps it yours):
 
 ```
-pip install "g1lab[camera,mock,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.18/g1lab-0.1.18-py3-none-any.whl"
+python3 -m venv ~/g1lab-env && . ~/g1lab-env/bin/activate
+pip install "g1lab[camera,missions] @ https://github.com/rstory1/g1lab/releases/download/v0.1.20/g1lab-0.1.20-py3-none-any.whl"
 ```
 
 That brings `pyzmq`, `msgpack` and `numpy`. Each name in the brackets is an extra;
@@ -24,33 +26,28 @@ leave out what you do not need, or add one by putting its name in the brackets:
 
 | Extra | Adds | For |
 |---|---|---|
-| `camera` | Pillow | camera pictures as arrays (`r.camera.read()`), the mock's drawn camera |
-| `mock` | MuJoCo | `g1lab.mock()`, the robot on your laptop |
+| `camera` | Pillow | camera pictures as arrays (`r.camera.read()`) |
 | `missions` | PyYAML | mission files written in YAML |
 | `video` | OpenCV, about 190 MB | a live camera window and video files; pictures and arrays work without it |
 | `export` | pyarrow, OpenCV | `python -m g1lab.export`, recordings to a training set |
-| `vision` | onnx, onnxruntime | `r.vision` on the mock: your own detector, run on your computer |
 
-In the lab, the same file is on the **lab board**: open
-`http://192.168.123.222:8090/` in a browser on the Robot Network, which also
-shows who has the robot, who is next, and what the robot's camera sees.
-There, with the dependencies already installed:
+The same file is on the **lab board**: open `http://192.168.123.222:8090/` in a browser,
+which also shows whether a program is moving the robot, whose, and what the robot's camera sees.
+To install it from there, with the dependencies already installed:
 
 ```
-pip install http://192.168.123.222:8090/g1lab-0.1.18-py3-none-any.whl
+pip install http://192.168.123.222:8090/g1lab-0.1.20-py3-none-any.whl
 ```
 
 ### Check you are ready
 
 ```
-python -m g1lab.check --host mock          # anywhere: Python, packages, the mock robot
-python -m g1lab.check --name YOURNAME      # in the lab, on the Robot Network
+python -m g1lab.check
 ```
 
 One line per check, ok / note / FAIL, each with its fix: Python and g1lab, the
-optional packages, the mock robot; in the lab also your address (.130-.159 by
-hand), whether the lab board serves the same g1lab as yours, the command port
-(5600), the streams (5601: which feeds are live) and the session, in words. A
+optional packages, your address, whether the lab board serves the same g1lab as yours, the command port
+(5600), the streams (5601: which feeds are live), whether the robot is on and which features are on, in words. A
 missing extra or a different g1lab is a note; no answer from the robot computer
 fails. It exits 1 when anything failed. It only reads: nothing moves.
 
@@ -61,31 +58,36 @@ import math
 import time
 import g1lab
 
-r = g1lab.connect("192.168.123.222", name="YOURNAME")  # the robot computer, and your name
+r = g1lab.connect()                                    # the lab workstation, as the account you are logged in with
+r.services.start("sim", wait=120)                      # the arm simulator; about 30 s the first time
+print(r.info().features)                               # what you can do right now, and why anything is off
 home = r.info().home                                   # the robot's standing pose
 
 arm = home["right_arm"].copy()
 arm[0] = math.radians(-60)                             # shoulder_pitch: raise the arm forward
 arm[3] = math.radians(20)                              # elbow
 
-with r.control() as c:                                 # waits for your turn
+with r.control() as c:                                 # waits until nobody else is moving the robot
     c.arms.move_to(right=arm, duration=2.0)            # smoothly, over 2 s
     c.hands.close("right")
     time.sleep(5)                                      # the arm stays up: g1lab keeps sending
-# leaving the block lets go: the arms go home, and the next student gets the robot
+# leaving the block lets go: the arms go home, and the robot is free for the next program
 ```
+
+`print(r.info().features)` prints one line per feature, `on` or `off: ` and the reason. Before you call
+something, ask: `r.info().features["walking"].on` is `True` when `c.walk()` will work. See
+[What is on](#what-is-on-rinfofeatures).
 
 The joints, their order and which way they turn: see [Which way the joints turn](joints_and_messages.md#which-way-the-joints-turn).
 Angles are in radians.
 
 ## Reading the robot
 
-Reading works any time, without a session and without waiting your turn.
+Reading works any time, with the robot off and while another program is moving the robot.
 
 | Call | What you get |
 |---|---|
-| `r.info()` | `phase`, `owner` (who has the robot), `queue`, `backend` (`"robot"` or `"sim"`, `"mock"` on `g1lab.mock()`; None when there is no session), and for each group (`left_arm`, `right_arm`, `left_hand`, `right_hand`): `groups` (joint names), `limits` (low, high), `home` |
-| `r.session()` | `phase`, `owner`, `queue`, `time_left` (seconds left in the session, counted from LIVE; None before LIVE and when there is no session) |
+| `r.info()` | `robot` (`"off"`, `"sim"` for a simulator, or `"robot"`), `features` (what is on: see below), `owner` (who has the robot), `time_left` (seconds left in the run the operator set, counted from LIVE; None before LIVE and when there is no limit), and for each group (`left_arm`, `right_arm`, `left_hand`, `right_hand`): `groups` (joint names), `limits` (low, high), `home` |
 | `r.state.joints()` | all 29 joints: `q` (angles), `target`, `temp`. `js.arm("right")` gives the 7 arm angles in the usual order; `js["R_elbow"]` one joint |
 | `r.state.imu()` | the body's tilt: `rpy` (roll, pitch, yaw) and `quat` |
 | `r.state.temps()` | motor temperatures, and the `hottest` one |
@@ -94,19 +96,43 @@ Reading works any time, without a session and without waiting your turn.
 | `r.depth.read()` | `(t, xyz, rgb)`: 3-D points in metres and their colours |
 | `r.depth.image()` | `(t, depth)`: a distance in metres for every pixel of the camera picture, `NaN` where it could not measure. **Needs `r.services.start("zed")`**: see [the camera quickstart](camera_quickstart.md#7-depth-for-every-pixel-and-the-zeds-objects-bodies-and-pose) |
 | `r.zed.objects()`, `r.zed.bodies()`, `r.zed.pose()` | what the ZED SDK works out from the camera: the things and people it sees (boxes and skeletons, in 3-D and on the picture) and where the camera is. Also needs `r.services.start("zed")` |
-| `r.on("joints", f)` | calls `f(js)` for every new reading, in the background. Also `"imu"`, `"hands.right"`, `"hands.left"`, `"temps"`, `"camera"`, `"depth"`, `"depth.image"`, `"lidar"`, `"head_imu"`, `"tf"`, `"zed.objects"`, `"zed.bodies"`, `"zed.pose"`, `"session"`, `"health"`, and in a walking session `"pose"` and `"odom"`. It returns a function: call it to stop |
-| `r.nav.pose()`, `r.nav.odom()` | in a walking session: where the robot is on the map, and where its legs count it is (starts at 0, 0, 0 and drifts). See [walk_reach_missions.md](walk_reach_missions.md) |
+| `r.on("joints", f)` | calls `f(js)` for every new reading, in the background. Also `"imu"`, `"hands.right"`, `"hands.left"`, `"temps"`, `"camera"`, `"depth"`, `"depth.image"`, `"lidar"`, `"head_imu"`, `"tf"`, `"zed.objects"`, `"zed.bodies"`, `"zed.pose"`, `"session"`, `"health"`, and with walking on `"pose"` and `"odom"`. It returns a function: call it to stop |
+| `r.nav.pose()`, `r.nav.odom()` | with walking on: where the robot is on the map, and where its legs count it is (starts at 0, 0, 0 and drifts). See [walk_reach_missions.md](walk_reach_missions.md) |
 
 A read gives the newest reading. If a sensor has sent nothing for a while,
 the read waits up to 2 seconds and then raises `NoData`.
 
+### What is on: `r.info().features`
+
+The robot is off, or it is a simulator, or it is the real robot (`r.info().robot`). What it can do is a
+set of features, each on or off. `r.info().features` maps a name to an object with `.on` (True or
+False) and `.why`: empty when on, and when off one sentence saying why and what turns it on.
+`print(r.info().features)` shows them all. A feature the robot computer cannot tell is not in the list.
+
+| Feature | What it covers | What turns it on |
+|---|---|---|
+| `arms` | arm and hand poses (`c.arms`, `c.hands`) | the arm simulator: `r.services.start("sim", wait=120)`. Off while the robot walks (walking takes `walk()` only), while the operator drives the arms, and after a fall until the operator clears it |
+| `walking` | `c.walk()`, `r.nav`, `r.nav.go_to()` | the walking simulator: `r.services.start("walk", wait=300)`, with the arm simulator off. Not open to programs on the real robot yet |
+| `camera` | the head camera's pictures | on with either simulator a few seconds after it starts, and on the real robot when the operator has the camera running |
+| `policy_trial` | `r.policy.trial()` | a simulator on, and the policy service on the robot running. Not on the real robot |
+| `teleop` | the operator driving the arms | only the operator, from the launcher. While it is on, `arms` is off |
+
+```python
+f = r.info().features
+if not f["walking"].on:
+    print(f["walking"].why)       # e.g. "walking is off: the arm simulator is on, and it cannot walk. Turn it off with ..."
+```
+
+When a call needs something that is off, it raises `Off` (see
+[When something goes wrong](#when-something-goes-wrong)); its message is the same sentence.
+
 ### The lidar
 
-The walking mock (`g1lab.mock(nav="lab")`) and the walking simulator answer
+The walking simulator answers
 `r.lidar.read()` with a flat `Scan`: one turn of 360 beams in the body's frame
 (0 = ahead, +90° = left), `inf` where nothing came back; `scan.points()` gives the
 points. The real robot's 3-D lidar on its head is not switched on yet. Once it is,
-these calls read it, with no session, like the camera:
+these calls read it, with the robot off, like the camera:
 
 | Call | What you get |
 |---|---|
@@ -115,7 +141,7 @@ these calls read it, with no session, like the camera:
 | `r.state.tf()` | where each part of the robot is relative to the next (`transforms`: `parent`, `child`, `xyz`, `quat` as w, x, y, z), for turning lidar points into the body's frame |
 
 The points are thinned to about one per 4 in cube, so a reading is light
-enough for Wi-Fi. Code that only uses `.points()` works on both.
+enough to stream. Code that only uses `.points()` works on both.
 
 ## Moving the robot
 
@@ -130,11 +156,13 @@ Everything that moves the robot goes inside `with r.control() as c:`.
 | `c.hands.open("right")` | open |
 | `c.hands.set("left", q)` | your own 7 finger angles |
 | `c.status` | the robot's last answer: `phase`, `clamped`, `held`, `resting`, `refused` |
-| `c.walk(vx, vy, wz)`, `c.stop()` | in a walking session only: walk for half a second (forward, left, turning), or stop now. See [walk_reach_missions.md](walk_reach_missions.md) |
+| `c.walk(vx, vy, wz)`, `c.stop()` | with walking on only: walk for half a second (forward, left, turning), or stop now. See [walk_reach_missions.md](walk_reach_missions.md) |
 
-`r.control()` first waits for your turn. It prints why it is waiting (*ben
-has the robot; you are 1st in line*) and goes on by itself when your turn
-comes. It waits 10 minutes at most; `r.control(wait=60)` waits less. Then
+`r.control()` first waits until the robot is free. Only one program moves it at a time; the
+others' motion commands are refused, and `control()` keeps trying. It prints why it is waiting
+(*the robot is in use by `<login>`; it is free when that program ends or lets go*) and goes on by itself
+when the robot is free. Two programs run by the same login count as one and share the robot.
+It waits 10 minutes at most; `r.control(wait=60)` waits less. Then
 the robot eases into its standing pose, which takes a few seconds, and the
 block starts.
 
@@ -149,17 +177,15 @@ block starts.
 ## Recording a dataset
 
 `g1lab.Recorder` writes the sensors to a folder, and `g1lab.Recording` reads
-them back, all on one clock. It needs no session and the robot does not move.
-The computer running your program must stay on the Robot Network, and the
-recording lands on that computer. Record over a cable plugged into a Robot
-Network switch port, not Wi-Fi: about 1.5 MB arrives every second, and a
+them back, all on one clock. It works with the robot off, and the robot does not move.
+The recording lands in a folder on the computer that runs your program, in your
+own account on the lab workstation. About 1.5 MB arrives every second, and a
 dropped reading leaves a gap that rejects the demo at export.
 
 ```python
 import g1lab
 
 run = g1lab.Recorder("192.168.123.222", "hallway").run(seconds=30)
-# on a laptop: g1lab.Recorder(g1lab.mock(camera="render"), "hallway")
 print(run)                                     # what it holds, per sensor
 for t, picture in run.read("camera"):
     joints = run.at("joints", t, max_age=0.1)  # (time, joints) at that moment
@@ -174,7 +200,7 @@ From a terminal: `python -m g1lab.record --host 192.168.123.222 --seconds 60
 
 | Call | What you get |
 |---|---|
-| `Recorder(source, out, topics)` | `source` is the robot computer's address, or a connected robot or mock. `out` is a new folder (default `recording_<date>_<time>`). `topics` narrows what is kept; the default is everything but depth and the ZED topics (`depth.image`, `zed.objects`, `zed.bodies`, `zed.pose`), and `g1lab.recording.ALL_TOPICS` adds them. The robot's lidar is off, so its `lidar` topic records nothing there. It stops by itself with less than 1 GB left on the disk |
+| `Recorder(source, out, topics)` | `source` is the robot computer's address, or a connected robot. `out` is a new folder (default `recording_<date>_<time>`). `topics` narrows what is kept; the default is everything but depth and the ZED topics (`depth.image`, `zed.objects`, `zed.bodies`, `zed.pose`), and `g1lab.recording.ALL_TOPICS` adds them. The robot's lidar is off, so its `lidar` topic records nothing there. It stops by itself with less than 1 GB left on the disk |
 | `rec.run(seconds)`, `rec.start()`, `rec.stop()`, `rec.counts()` | record for that long (until Ctrl-C with no number); start and stop in the background (`stop()` and `run()` return the Recording); readings so far, per sensor |
 | `run.read(topic, start, end)` | every reading in that time span as `(t, value)` |
 | `run.at(topic, t, max_age)` | the newest reading at or before `t` as `(t, value)`, `None` if none is that recent |
@@ -226,8 +252,8 @@ state timestamps use the same requested frame rate (`--fps`, default 15).
 
 A policy is your network or Python class driving the arms and hands 50 times a
 second. `g1lab.policy` holds the `Policy` class to write one, `NetworkPolicy` to
-load a TorchScript file, and the tools to try it on the mock. You send the
-folder with `r.policy.upload()` and trial it in a simulator session with
+load a TorchScript file, and the tools to try it in your own program. You send the
+folder with `r.policy.upload()` and trial it in a simulator with
 `r.policy.trial()`; the operator approves a passing hash and runs it on the robot
 with you. See [policy.md](policy.md).
 
@@ -238,13 +264,12 @@ Each problem is its own exception, so you can catch the one you expect:
 | Exception | What it means | What to do |
 |---|---|---|
 | `Disconnected` | no answer from the robot computer: the address is wrong, or the robot computer is not running | check the address (in the lab: `192.168.123.222`) |
-| `NoSession` | the robot computer answers, but no session is running | start a simulator session with `r.services.start("sim", wait=120)`, or wait: `control()` waits for one |
-| `Busy` | someone else has the robot (`e.owner`, your place `e.place`) | `control()` waits your turn; this comes only when `wait` runs out |
-| `NameInUse` | someone on another computer uses your name | pick another `name` |
+| `Off` | the robot is off, or the feature this call needs is off. `e.feature` names the feature (`"walking"`, `"arms"`, `"policy_trial"`), and is None when the whole robot is off | read the message: it says what turns it on. With the robot off, `r.services.start("sim", wait=120)` turns the arm simulator on, or wait: `control()` waits for the robot. `r.info().features` shows every feature and why |
+| `Busy` | someone else has the robot (`e.owner`), or you lost it | `control()` keeps trying; this comes only when `wait` runs out |
 | `Refused` | the pose would hit the robot itself (`e.reason` says what) | change that arm's angles. `move_to` raises it; after `set` it shows on `c.status.refused` |
-| `Ended` | the session is over, or ending | stop; your program is done |
-| `NoData` | a sensor sent nothing | that sensor is off, or the session does not carry it |
-| `ServiceRefused` | `r.services.start()` may not start that service (`e` says why) | the reason says which. Graphics card too full (`llm`, `zed`): stop your own other service or try again later; the reason gives the numbers. "not available yet": there is no such service yet. Session or deployment services: they start only from the launcher, so start `"sim"` or `"walk"` instead |
+| `Ended` | the robot was turned off, or your control of it ended | stop; your program is done |
+| `NoData` | a sensor sent nothing | that sensor is off, or the robot does not carry it |
+| `ServiceRefused` | `r.services.start()` may not start that service (`e` says why) | the reason says which. Graphics card too full (`llm`, `zed`): stop your own other service or try again later; the reason gives the numbers. "not available yet": there is no such service yet. Services that move the robot (the deployment and the robot's walking services): they start only from the launcher, so start `"sim"` or `"walk"` instead. `"sim"` while the walking simulator runs, or `"walk"` while the arm simulator runs: the lab runs one simulator at a time; the message says which is running, and `r.services.stop(...)` of that one frees it a few seconds later |
 
 They all belong to `g1lab.G1LabError`.
 
@@ -257,11 +282,11 @@ except g1lab.Refused as e:
 
 ## Starting a simulator or the language model: `r.services`
 
-A program can ask the robot computer to start what it needs. No session is
-needed for this.
+A program can ask the robot computer to start what it needs. The robot can be off
+for this.
 
 ```python
-r.services.start("sim", wait=120)    # a simulated robot for your program; returns when it takes programs (about 30 s)
+r.services.start("sim", wait=120)    # the arm simulator; returns when it takes programs (about 30 s)
 with r.control() as c:               # then use it as usual
     ...
 r.services.start("llm", wait=120)    # the language model on the robot computer
@@ -271,13 +296,16 @@ r.services.stop("llm")               # you are done with it
 print(r.services.status())           # every service: what it is, and whether it runs
 ```
 
-- **sim** is a simulator session that only ever drives the simulated robot.
-  `start("sim", wait=N)` returns when the session takes programs, or raises "the simulator is
+- **sim** is the arm simulator: it only ever drives the simulated robot.
+  `start("sim", wait=N)` returns when it takes programs, or raises "the simulator is
   still starting: wait a little longer, or start with a larger wait=" (a `g1lab.G1LabError`) when N runs out.
   Only one runs at a time, and never while the real robot is on.
-- **walk** is the same kind of session with the simulated robot walking: see
+- **walk** is the walking simulator: the simulated robot walking, see
   [walk_reach_missions.md](walk_reach_missions.md). It and `sim` share
-  one simulator, so only one of the two runs.
+  one simulator, so only one of the two runs. Asking for the other one while one runs raises
+  `ServiceRefused` saying which is running and to stop it with `r.services.stop("sim")` or
+  `r.services.stop("walk")` first; in a program that does not catch it, that sentence is all
+  that prints and the program exits with an error. The arms work in both.
 - **llm** is the language model. It needs about 22.5 GB of the
   graphics card, and the robot's controller must always keep 2 GB, so it is
   refused when the card is too full (the reason gives the numbers), and
@@ -288,13 +316,12 @@ print(r.services.status())           # every service: what it is, and whether it
   the card cannot also keep the robot's controller its 2 GB. Unlike the model it
   is allowed while the real robot runs, but it shares the card with the controller,
   so stop it when you are done. See [the camera quickstart](camera_quickstart.md#7-depth-for-every-pixel-and-the-zeds-objects-bodies-and-pose).
-- **deploy, session** move the robot. Only the
+- The services named `deploy` and `session` move the robot. Only the
   operator starts them, from the launcher; `start()` raises
   `g1lab.ServiceRefused` saying so.
 - **vision, speech, recorder** are not available: `start()` says "not available yet".
-  Your own detector needs no service: `r.vision` (see
-  [Your own detector](#your-own-detector-rvision)). Recording runs from your own program
-  on your own computer; see [Recording a dataset](#recording-a-dataset).
+  Your own detector (`r.vision`) waits for the lab simulator too. Recording runs from your own program;
+  see [Recording a dataset](#recording-a-dataset).
 
 `start()` holds a lease for your program, and g1lab renews it every minute
 while your program runs. Ten minutes after the last program using a service
@@ -311,8 +338,6 @@ except g1lab.ServiceRefused as e:
     print(e)        # "the language model needs about 22.5 GB ... 13.2 GB is free; ..."
 ```
 
-On a laptop, `g1lab.mock()` answers these with the same rules and starts nothing.
-
 ## Asking the language model: `r.ask()`
 
 ```python
@@ -327,7 +352,7 @@ if reply.strip().lower() == "wave":
 ```
 
 `r.ask()` returns the model's text. The model runs on the robot computer, so
-this works from a laptop. It only writes text: it cannot move the robot, and it
+this works from your own program. It only writes text: it cannot move the robot, and it
 knows nothing about the robot, your program or your last question, so put
 everything it needs in `prompt`, and the instruction it should keep to in
 `system`. Check what comes back before acting on it. It can answer something
@@ -358,61 +383,21 @@ except g1lab.G1LabError as e:
     print(e)        # no answer in time, or the question was refused, with the reason
 ```
 
-On the mock, `r.ask()` answers with a line saying it has no model. To test a
-program that acts on the answer, give it one:
-`g1lab.mock(name="YOURNAME", llm=lambda prompt: "wave")`.
-
-## On a laptop: `g1lab.mock()`
-
-No robot, no network: `r = g1lab.mock(name="YOURNAME")` answers every call
-`connect()` does, and runs the robot's own safety code, so a pose the robot
-refuses is refused here too, with the same words. Most examples take
-`--host mock`; `mission_basic.py` has no `--host` (it runs on the mock), and `zed_sdk.py` has no mock. Needs the `mock` extra ([Install](#install)).
-
-```python
-r = g1lab.mock(name="YOURNAME", view=True)  # view: a 3-D window with the robot's pose
-with r.control() as c:
-    c.arms.move_to(right=..., duration=2.0)
-```
-
-What it is not: the legs stand still, nothing balances or heats up, the hand
-pads read zero, and the camera plays a short recorded clip (or nothing).
-`g1lab.mock(camera="render")` draws the head camera's view instead: the
-mock robot's own arms and a red ball in front of the right shoulder
-(`ball=(x, y, z)` moves it, `ball=None` removes it; needs the `camera` extra). The
-simulated camera sits where the robot's camera sits, with the same lens, so
-pixel maths that works here works on the robot.
-`r.vision` runs your own detector on that camera, here on your computer
-([Your own detector](#your-own-detector-rvision)).
-Joints follow the command about 0.1 s behind, as on the robot. The session
-runs like a real one: settling for 2 s after your first pose, then live, and
-after `minutes=` (45) the arms go home and it ends. `say=print` shows the
-robot computer's own messages ("pose held: ...", "arm resting"). On a Mac,
-run a program with `view=True` using `mjpython` instead of `python`.
-
-`g1lab.mock(nav="lab")` (an 8 x 6 m room) or `nav="hall"` (a 20 m corridor with doors)
-makes the mock a walking session: see [walk_reach_missions.md](walk_reach_missions.md).
-
 ## Example programs
 
 Small programs to start from are in [examples/](../examples/). Each says at its top what it
-does and how to run it; all but `zed_sdk.py` run on a laptop with `--host mock`.
+does and how to run it. They connect to the lab computer, `192.168.123.222`, unless you pass
+`--host`.
 [walk_reach_missions.md](walk_reach_missions.md) explains the walking, reach and
 mission ones.
 
 ## Missions
 
-Skills in a row (find, go_to, approach, pick, place, drop, home), from a YAML file or
-from Python: [missions.md](missions.md).
-
-## Your own detector: `r.vision`
-
-Upload an ONNX model you trained, and each camera picture goes through it; your program
-reads what it found, each thing with a 3-D point. It runs on `g1lab.mock(camera="render")`
-today, and on the robot once that is switched on: [vision.md](vision.md).
+Skills in a row, from a YAML file or from Python. In the lab simulator the `go_to` and `home` steps run
+(`go_to` in the walking simulator, `home` in both); the ones that need a detector (`find`, `approach`, `pick`, `place`) wait
+for one: [missions.md](missions.md).
 
 ## Modules
 
-The modules, worked notebooks that each show how to use one feature and run on the
-mock first, are in [notebooks/](../notebooks/README.md); that page lists
+The modules, worked notebooks that each show how to use one feature, are in [notebooks/](../notebooks/README.md); that page lists
 them and says what to install.

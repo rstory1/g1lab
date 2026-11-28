@@ -14,14 +14,13 @@ the plain messages underneath it, which still work as they are.
 
 ## What you need
 
-- Python 3 and one package: `pip install pyzmq` (somewhere with internet, before you plug into the Robot Network; installing g1lab already brings it)
+- Python 3 and one package: `pip install pyzmq` (installing g1lab already brings it)
 - The **address** of the robot computer (in the lab, `192.168.123.222`) and the **port**, normally `5600`.
-- A **name** for yourself, such as `ana`. Every message carries it, and the operator sees it on screen.
+- A **label** for your program: your login account name (`whoami`). Every message carries it, and the operator sees it on screen. The example program uses your login account by itself.
 
-**In the lab, the lab board** shows whether a session is on, who has the
-robot, who is next, and what the robot's camera sees: open
-`http://192.168.123.222:8090/` in a browser on the Robot Network (wired, with your
-address set by hand: [camera_quickstart.md](camera_quickstart.md), section 1). It also has
+**In the lab, the lab board** shows whether the robot is on, who has the
+robot, and what the robot's camera sees: open
+`http://192.168.123.222:8090/` in a browser. It also has
 the `g1lab` package to download ([guide.md](guide.md)).
 
 ## A program from scratch
@@ -29,8 +28,10 @@ the `g1lab` package to download ([guide.md](guide.md)).
 The whole idea fits in a few lines:
 
 ```python
-import json, math, time
+import getpass, json, math, time
 import zmq
+
+me = getpass.getuser()                          # your label: your login account
 
 sock = zmq.Context().socket(zmq.REQ)
 sock.setsockopt(zmq.RCVTIMEO, 2000)             # give up after 2 s without an answer
@@ -40,19 +41,19 @@ def send(msg):
     sock.send(json.dumps(msg).encode())
     return json.loads(sock.recv())              # always read the answer before sending again
 
-home = send({"client": "YOURNAME", "cmd": "info"})["home"]
+home = send({"client": me, "cmd": "info"})["home"]
 
 t0 = time.time()
 while time.time() - t0 < 20:
     arm = list(home["right_arm"])
     arm[0] = math.radians(-60)                  # shoulder_pitch: raise the arm forward
     arm[3] = math.radians(20)                   # elbow
-    reply = send({"client": "YOURNAME", "right_arm": arm})
+    reply = send({"client": me, "right_arm": arm})
     if not reply["ok"]:
         print(reply["error"])
     time.sleep(1 / 30)                          # about 30 messages a second
 
-send({"client": "YOURNAME", "cmd": "release"})  # done: the arm goes home
+send({"client": me, "cmd": "release"})  # done: the arm goes home
 ```
 
 Three rules come from the way the connection works:
@@ -64,7 +65,7 @@ Three rules come from the way the connection works:
 ## The message
 
 ```json
-{"client": "YOURNAME",
+{"client": "your_login",
  "right_arm":  [shoulder_pitch, shoulder_roll, shoulder_yaw, elbow, wrist_roll, wrist_pitch, wrist_yaw],
  "right_hand": [thumb_0, thumb_1, thumb_2, middle_0, middle_1, index_0, index_1]}
 ```
@@ -85,11 +86,11 @@ The answer looks like:
 
 | phase | what it means for you |
 |---|---|
-| `waiting` | the session has started; nothing moves yet |
+| `waiting` | the robot is on; nothing moves yet |
 | `settling` | the robot is easing into its starting pose, then towards your angles |
 | `live` | the robot is following you |
-| `homing` | the arms are going down and your messages are ignored: time is up, or the operator pressed ARMS HOME (then the session goes on; see below) |
-| `ended` | the session is over; your program should stop |
+| `homing` | the arms are going down and your messages are ignored: time is up, or the operator pressed ARMS HOME (then the robot stays on; see below) |
+| `ended` | the robot was turned off, or your control of it ended; your program should stop |
 
 ## Which way the joints turn
 
@@ -150,8 +151,8 @@ You don't need to do anything about these, but they explain what you'll see.
 - **The path is checked too.** If your pose is fine but the way there is not, the arms stop at the last safe point and the answer has `held`. The arm then swings out to the side to go round, if it can.
 - **Raised arms get a rest.** Holding an arm up makes its shoulder motor hot. After 30 seconds raised, the arm goes down and rests for about 15 seconds, then follows you again. Plan programs that lower the arms now and then. The count is the robot's, not yours: if the program before you left an arm up, its time is still on the clock when you start, and your arm may rest sooner than 30 seconds in. The answer says so (`resting_why`: "raised by the program before yours").
 - **Silence puts the arms down.** After 1 second with no messages, the arms go slowly down and the hands open. Send again and the robot comes back to you.
-- **One student at a time.** Someone else gets "*ana has the robot*" until you send `release` or stop sending for 10 seconds.
-- **The operator and the spotter can always step in.** They can open the hands or end the session at any time.
+- **One program moves the robot at a time.** Another program gets "*the robot is in use by your_login*" until you send `release` or stop sending for 10 seconds.
+- **The operator and the spotter can always step in.** They can open the hands or end your run at any time.
 
 ### How closely the joints follow
 
@@ -173,18 +174,16 @@ make it sway a little. That is normal.
 | You see | What to do |
 |---|---|
 | `zmq.error.Again: Resource temporarily unavailable` | The program above waited 2 s (`RCVTIMEO`) and got no answer. Check the address and port (in the lab: `192.168.123.222`, `5600`). If both are right, the robot computer is not running. The socket is now stuck: close it and make a new one before sending again, or the next send fails with `Operation cannot be accomplished in current state`. |
-| `... has the robot` | Another student is driving. Wait until they finish, or for 10 s after they stop. |
-| `... you are 2nd in line` | Keep sending: you get the robot when it is your turn. Stop for 3 s and you lose your place. |
-| `no session is running` | The robot is reachable, but no session has started yet. Keep sending, or wait. |
-| `the SIM session is still starting` | The session your program asked for with `r.services.start` is coming up. Keep sending; `control()` waits for it. |
-| `the name 'ana' is in use from ...` | Someone on another computer uses that name. Pick another `--name`. |
+| `the robot is in use by ...` | Another program is moving the robot. Keep sending: you get it as soon as that program ends or lets go, or 10 s after it stops. |
+| `the robot is off: turn the arm simulator on with r.services.start("sim", wait=120), ...` | The robot is reachable, but it is off. Turn the arm simulator on as the message says, or keep sending and you are in when the operator turns the robot on. g1lab raises `Off`. |
+| `the simulator is still starting` | The simulator your program asked for with `r.services.start` is coming up. Keep sending; `control()` waits for it. |
 | `unknown key(s) ['left_arms']` | A typo in a group name. The names are `left_arm`, `right_arm`, `left_hand` and `right_hand`. |
 | `right_arm must be a list of 7 numbers (rad): ['shoulder_pitch', ...]` | A list has the wrong length, or contains text or `True`/`False`. |
 | `right_arm has NaN or infinity` | Your maths produced "not a number" or infinity, for example from dividing by zero. |
 | `Operation cannot be accomplished in current state` | You sent twice without reading the answer in between: always `recv()` after each `send()`. It also comes after a timeout (`zmq.error.Again`) on the same socket: close it and make a new one. |
-| The robot stopped following and the arms went down | Your program paused for more than 1 second, or the session's time ran out. If `phase` is `ended`, the session is over. |
+| The robot stopped following and the arms went down | Your program paused for more than 1 second, or the run's time ran out (`r.info().time_left` is the seconds left). If `phase` is `ended`, the run is over. |
 | `the right hand would hit the head; pose refused` | That pose puts part of the robot into itself. Change that arm's angles, often shoulder_roll or elbow. |
 | `held` in the answer | The way to your pose is blocked. The arm tries to go round by itself, swinging out to the side. If `held` stays, go via a pose with the arm further out to the side or forward. |
 | `resting` in the answer, and the arm went down | The arm was up for 30 s. Wait for it, and lower the arms between raises. If `resting_why` says "raised by the program before yours", the time came from the program before yours; it is the same wait. |
-| `the operator sent the arms home, so your turn is over: call control() again to get in line` | The operator pressed ARMS HOME. The arms went home and your turn ended; the session is still running. Call `control()` again to take a place in the line. |
+| `the operator sent the arms home, so you no longer have the robot: call control() again to take it back` | The operator pressed ARMS HOME. The arms went home and your program lost the robot; the robot is still on. Call `control()` again to take it back. |
 | The arm doesn't quite match your angles | See the section above. Fast movement lags; held poses settle within a few degrees. |

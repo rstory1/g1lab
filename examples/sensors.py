@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Read the robot without moving it: joints, body tilt, the right hand, the
-temperatures and one camera picture. Needs no session.
+temperatures and one camera picture. Works with the robot off.
 
-    python3 sensors.py --host 192.168.123.222 --name YOURNAME --picture view.jpg
+    python3 sensors.py --host 192.168.123.222 --picture view.jpg
 """
 
 import argparse
@@ -23,14 +23,12 @@ except ImportError:                     # run from the repo, not installed
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--host", default="localhost", help="the robot computer, or mock")
+    ap.add_argument("--host", default="192.168.123.222", help="the robot computer")
     ap.add_argument("--port", type=int, default=5600)
-    ap.add_argument("--name", default="example")
     ap.add_argument("--picture", help="save one camera picture (JPEG) here")
     a = ap.parse_args()
 
-    r = (g1lab.mock(name=a.name) if a.host == "mock"     # a laptop, no robot
-         else g1lab.connect(a.host, name=a.name, port=a.port))
+    r = g1lab.connect(a.host, port=a.port)
     try:
         js = r.state.joints()
         print("right arm (deg):", [round(math.degrees(v), 1) for v in js.arm("right")])

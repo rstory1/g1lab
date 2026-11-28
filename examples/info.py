@@ -2,10 +2,10 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 The University of Iowa, Department of Mechanical Engineering
 # SPDX-License-Identifier: Apache-2.0
 
-"""Check you can reach the robot: print who has it, the joint names, the
-limits and the home pose. Needs no session.
+"""Check you can reach the robot: print whether it is on, who has it, what features
+are on, the joint names, the limits and the home pose. Works with the robot off.
 
-    python3 info.py --host 192.168.123.222 --name YOURNAME
+    python3 info.py --host 192.168.123.222
 """
 
 import argparse
@@ -22,16 +22,14 @@ except ImportError:                     # run from the repo, not installed
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--host", default="localhost", help="the robot computer, or mock")
+    ap.add_argument("--host", default="192.168.123.222", help="the robot computer")
     ap.add_argument("--port", type=int, default=5600)
-    ap.add_argument("--name", default="example")
     a = ap.parse_args()
 
-    r = (g1lab.mock(name=a.name) if a.host == "mock"     # a laptop, no robot
-         else g1lab.connect(a.host, name=a.name, port=a.port))
+    r = g1lab.connect(a.host, port=a.port)
     info = r.info()
-    print(f"session: {info.phase}   has the robot: {info.owner or 'nobody'}   "
-          f"in line: {', '.join(info.queue) or 'nobody'}")
+    print(f"robot: {info.robot}   has the robot: {info.owner or 'nobody'}")
+    print(info.features)       # what is on, and for each thing that is off, what turns it on
     for g, names in info.groups.items():
         print(f"\n{g}")
         for name, (lo, hi), h in zip(names, info.limits[g], info.home[g]):
